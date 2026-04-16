@@ -83,11 +83,42 @@ ReplayX should not use the OpenAI Agents SDK as the core runtime.
 
 1. Read `AGENTS.md`.
 2. Read `Docs/replayx-codex-first-architecture.md`.
-3. Run `pnpm install`.
-4. Generate the golden run artifacts with `pnpm golden-run incidents/checkout-race-condition.json`.
-5. Start the demo app with `pnpm demo-app`.
-6. Start the dashboard with `pnpm dashboard:dev`.
-7. Use Slack as the intake trigger and the dashboard as the main demo surface.
+3. Copy `.env.example` to `.env` if you want to tune Codex worker model selection or timeouts.
+4. If you want the Slack intake flow, copy `slack/.env.example` to `slack/.env` and fill in the Slack credentials plus the ReplayX handoff values.
+5. Run `pnpm install`.
+6. Generate the golden run artifacts with `pnpm golden-run incidents/checkout-race-condition.json`.
+7. Start the demo app with `pnpm demo-app`.
+8. Start the dashboard with `pnpm dashboard:dev`.
+9. Use Slack as the intake trigger and the dashboard as the main demo surface.
+
+## Environment
+
+ReplayX now has two environment surfaces:
+
+- Root `.env` for orchestrator runtime knobs such as `REPLAYX_CODEX_MODEL` and worker enable/timeout flags.
+- `slack/.env` for the Slack intake service.
+
+Root `.env` values are optional. The orchestrator already has defaults for:
+
+- `REPLAYX_CODEX_MODEL`
+- `REPLAYX_USE_CODEX_REPRO_WORKER`
+- `REPLAYX_CODEX_REPRO_TIMEOUT_MS`
+- `REPLAYX_USE_CODEX_DIAGNOSIS_WORKERS`
+- `REPLAYX_CODEX_DIAGNOSIS_TIMEOUT_MS`
+- `REPLAYX_USE_CODEX_FIX_WORKERS`
+- `REPLAYX_CODEX_FIX_TIMEOUT_MS`
+
+Important auth note:
+
+- This repo does not read `OPENAI_API_KEY` directly.
+- Live Codex SDK worker execution depends on your existing Codex/OpenAI authentication on the local machine.
+- If that auth is unavailable, the replay-safe flow can still run with live workers disabled.
+
+Slack service variables:
+
+- Required: `SLACK_SIGNING_SECRET`, `SLACK_BOT_TOKEN`, `SLACK_BUGS_CHANNEL_ID`
+- Optional for the handoff demo flow: `REPLAYX_DASHBOARD_URL`, `REPLAYX_GOLDEN_INCIDENT_ID`, `REPLAYX_INTERNAL_API_TOKEN`
+- See `slack/README.md` for deployment-specific notes.
 
 ## Demo Commands
 
