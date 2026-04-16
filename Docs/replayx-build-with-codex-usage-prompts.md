@@ -164,6 +164,12 @@ Verification:
 Stop only when the scaffold is in place and summarized.
 ```
 
+### Phase 1 Operator Note
+
+You do not need to use `Docs/replayx-codex-first-prompts.md` directly yet.
+
+Phase 1 is about repo structure, packages, and scaffolding rather than internal ReplayX worker behavior.
+
 ## Phase 2 Prompt: Build The Incident Contract
 
 ```text
@@ -195,6 +201,12 @@ Return:
 - contract summary
 - verification result
 ```
+
+### Phase 2 Operator Note
+
+You still do not need the internal worker prompt pack directly for implementation.
+
+Phase 2 should align with the incident payload shape documented in `Docs/replayx-codex-first-prompts.md`, but it does not yet need worker prompt strings in code.
 
 ## Phase 3 Prompt: Build The Demo App
 
@@ -228,6 +240,12 @@ Verification:
 - each seeded incident corresponds to an actual failing behavior or code path
 ```
 
+### Phase 3 Operator Note
+
+You do not need the internal worker prompt pack directly here either.
+
+Phase 3 is about creating a target system that later ReplayX workers will diagnose and fix.
+
 ## Phase 3.5 Prompt: Add Pre-Seeding Checklist
 
 ```text
@@ -260,6 +278,10 @@ Put it in the most sensible Markdown file for operators.
   Run one full narrated practice incident from intake through bug repro, expected diagnosis target, intended fix area, and final artifact/story so the operator flow is stable.
 - Fallback dashboard recording
   Capture one clean fallback run before demo day: terminal output, failing and healthy route results, and any dashboard-ready screenshots or saved JSON/event artifacts needed if live execution is flaky.
+
+### Phase 3.5 Operator Note
+
+This phase is operational documentation only. The internal prompt pack is not the primary source here.
 
 ## Phase 4 Prompt: Build Repro Phase
 
@@ -297,6 +319,20 @@ Done when:
 - the failing and healthy controls are both captured
 - the phase can continue even if the Codex worker is skipped or fails
 ```
+
+### Phase 4 Operator Note
+
+At Phase 4, you should start using `Docs/replayx-codex-first-prompts.md` as the internal prompt spec for the repro worker.
+
+Use:
+
+- Prompt 02: Repro and Environment Verification
+
+That means:
+
+- the repro worker role and mission should come from that file
+- the repro worker output schema should match that file
+- any in-code prompt string for the repro worker should be derived from that file rather than improvised ad hoc
 
 ## Phase 5 Prompt: Build Diagnosis Arena
 
@@ -342,6 +378,21 @@ Done when:
 - later phases can consume the shortlist without manual interpretation
 ```
 
+### Phase 5 Operator Note
+
+Since you are at Phase 5, you should already be using `Docs/replayx-codex-first-prompts.md` as the internal prompt spec for the diagnosis workers.
+
+That means:
+
+- diagnosis worker roles should come from that file
+- diagnosis worker output schemas should match that file
+- any in-code prompt strings for diagnosis workers should be derived from that file rather than improvised ad hoc
+
+Use:
+
+- Prompt 03: Diagnosis Arena Base Prompt
+- the relevant diagnosis worker variants under Prompt 03
+
 ## Phase 6 Prompt: Build Challenger Validation
 
 ```text
@@ -371,6 +422,20 @@ Done when:
 - surviving candidates are clearly separated from rejected ones
 - the output is machine-readable and ready for fix selection
 ```
+
+### Phase 6 Operator Note
+
+At Phase 6, use `Docs/replayx-codex-first-prompts.md` as the internal prompt spec for the challenger worker.
+
+Use:
+
+- Prompt 04: Challenger Validation
+
+That means:
+
+- the challenger role, mission, and required workflow should come from that file
+- the challenger output schema should match that file
+- any in-code challenger prompt should be derived from that file
 
 ## Phase 7 Prompt: Build Fix Arena
 
@@ -424,6 +489,23 @@ Done when:
 - a winner is selected without manual judgment
 ```
 
+### Phase 7 Operator Note
+
+At Phase 7, use `Docs/replayx-codex-first-prompts.md` as the internal prompt spec for the fix workers.
+
+Use:
+
+- Prompt 05: Fix Arena Base Prompt
+- Prompt 05A: Minimal Fix
+- Prompt 05B: Safe Fix
+- Prompt 05C: Durable Fix
+
+That means:
+
+- the base fix worker contract should come from that file
+- each fix strategy variant should map to one of those prompt sections
+- in-code fix worker prompts should not be improvised independently from the prompt pack
+
 ## Phase 8 Prompt: Build Review And Regression Proof
 
 ```text
@@ -451,6 +533,20 @@ Done when:
 - regression proof is explicit enough to automate later
 ```
 
+### Phase 8 Operator Note
+
+At Phase 8, use `Docs/replayx-codex-first-prompts.md` as the internal prompt spec for both review and regression workers.
+
+Use:
+
+- Prompt 06: Review and Regression Proof
+- Prompt 07: Regression Test Writer
+
+That means:
+
+- review outputs should follow the findings-first contract from that file
+- regression-proof outputs should follow the narrow incident-specific proof contract from that file
+
 ## Phase 9 Prompt: Build Skill Writer And Postmortem
 
 ```text
@@ -477,6 +573,20 @@ Done when:
 - a concise postmortem lands on disk
 - both are derived from the actual run outputs
 ```
+
+### Phase 9 Operator Note
+
+At Phase 9, use `Docs/replayx-codex-first-prompts.md` as the internal prompt spec for artifact-writing workers.
+
+Use:
+
+- Prompt 08: Postmortem Writer
+- Prompt 09: Skill Writer
+
+That means:
+
+- the postmortem should follow the fact-vs-inference discipline from that file
+- the skill artifact should follow the reuse-oriented precision from that file
 
 ## Phase 10 Prompt: Wire End-To-End Orchestrator
 
@@ -514,6 +624,17 @@ Done when:
 - the operator can narrate the flow from artifacts alone
 ```
 
+### Phase 10 Operator Note
+
+At Phase 10, you should be wiring the orchestrator around the full internal prompt system.
+
+Use:
+
+- Prompt 00 as the top-level orchestration contract
+- Prompt 01 through Prompt 09 as the worker contracts for the relevant phases
+
+That means the end-to-end pipeline should route work according to the prompt pack rather than inventing separate undocumented worker behavior.
+
 ## Phase 11 Prompt: Build Hackathon Dashboard
 
 ```text
@@ -539,6 +660,15 @@ Requirements:
 Verification:
 - dashboard can render a completed run artifact
 ```
+
+### Phase 11 Operator Note
+
+The dashboard does not need a new internal worker prompt, but it should reflect the output contracts defined in `Docs/replayx-codex-first-prompts.md`.
+
+In practice:
+
+- the dashboard should visualize outputs from repro, diagnosis, challenger, fix, review, and skill/postmortem phases
+- UI assumptions should follow the actual JSON artifacts emitted by those workers
 
 ## Phase 11.5 Prompt: Add Event Schema And Replay Mode
 
@@ -567,6 +697,10 @@ Verification:
 - dashboard can render a mocked saved event stream end to end
 ```
 
+### Phase 11.5 Operator Note
+
+This phase should stay aligned to the worker outputs and artifacts defined by the internal prompt pack, but it does not introduce a new worker prompt of its own.
+
 ## Phase 12 Prompt: Build Demo Script And Judging Flow
 
 ```text
@@ -592,6 +726,10 @@ Verification:
 - the story is crisp
 ```
 
+### Phase 12 Operator Note
+
+This phase is presentation-oriented. It should reference the worker behavior defined by the internal prompt pack, but it does not create new internal worker prompts.
+
 ## Phase 13 Prompt: Package The Submission Story
 
 ```text
@@ -611,6 +749,10 @@ Use the strongest parts of the older hackathon plan for product storytelling, bu
 
 Do not mention OpenAI Agents SDK as the core runtime.
 ```
+
+### Phase 13 Operator Note
+
+This phase is also presentation-oriented. It should stay consistent with the internal prompt system and architecture docs, but it does not define new worker prompts.
 
 ## Sources
 
