@@ -10,6 +10,7 @@ function createApp({
   bugsChannelId = process.env.SLACK_BUGS_CHANNEL_ID,
   slackService,
   slackClient,
+  logger,
   now = Date.now,
 } = {}) {
   const app = express();
@@ -18,6 +19,7 @@ function createApp({
     bugsChannelId,
     slackService,
     slackClient,
+    logger,
     now,
   });
 

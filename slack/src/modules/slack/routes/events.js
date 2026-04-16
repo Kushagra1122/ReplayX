@@ -5,13 +5,13 @@ const {
   createSlackSignatureMiddleware,
 } = require("../middleware/signature");
 
-function createSlackEventsRouter({ controller, signingSecret, now }) {
+function createSlackEventsRouter({ controller, logger, signingSecret, now }) {
   const router = express.Router();
 
   router.post(
     "/events",
     express.json({ verify: captureRawBody }),
-    createSlackSignatureMiddleware({ signingSecret, now }),
+    createSlackSignatureMiddleware({ logger, signingSecret, now }),
     controller.handleEvents,
   );
 

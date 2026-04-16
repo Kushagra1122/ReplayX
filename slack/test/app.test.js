@@ -23,6 +23,25 @@ function signPayload(payload) {
   };
 }
 
+function createLoggerSpy() {
+  const entries = [];
+
+  return {
+    logger: {
+      info(event, details) {
+        entries.push({ level: "info", event, details });
+      },
+      warn(event, details) {
+        entries.push({ level: "warn", event, details });
+      },
+      error(event, details) {
+        entries.push({ level: "error", event, details });
+      },
+    },
+    entries,
+  };
+}
+
 test("GET /health returns ok", async () => {
   const app = createApp({
     signingSecret,
@@ -68,9 +87,11 @@ test("POST /slack/events returns plaintext challenge for url_verification", asyn
 });
 
 test("POST /slack/events rejects invalid signatures", async () => {
+  const { logger, entries } = createLoggerSpy();
   const app = createApp({
     signingSecret,
     now: fixedNow,
+    logger,
     slackService: {
       handleAppMention: async () => ({}),
       postMessage: async () => ({}),
@@ -86,14 +107,26 @@ test("POST /slack/events rejects invalid signatures", async () => {
 
   assert.equal(response.status, 401);
   assert.deepEqual(response.body, { error: "Invalid Slack signature" });
+  assert.deepEqual(entries, [
+    {
+      level: "warn",
+      event: "slack.signature.invalid",
+      details: {
+        path: "/events",
+        timestamp: String(fixedTimestamp),
+      },
+    },
+  ]);
 });
 
 test("POST /slack/events replies to app mentions in the bugs channel", async () => {
   const calls = [];
+  const { logger, entries } = createLoggerSpy();
   const app = createApp({
     signingSecret,
     bugsChannelId: "CBUGS123",
     now: fixedNow,
+    logger,
     slackClient: {
       postMessage: async (payload) => {
         calls.push(payload);
@@ -128,6 +161,48 @@ test("POST /slack/events replies to app mentions in the bugs channel", async () 
     threadTs: undefined,
   });
   assert.deepEqual(response.body, { ok: true, result: { posted: true } });
+  assert.deepEqual(entries, [
+    {
+      level: "info",
+      event: "slack.events.received",
+      details: {
+        requestType: "event_callback",
+        eventType: "app_mention",
+        eventId: undefined,
+        channel: "CBUGS123",
+        user: undefined,
+        ts: "171234.123",
+        threadTs: undefined,
+      },
+    },
+    {
+      level: "info",
+      event: "slack.app_mention.reply.attempt",
+      details: {
+        channel: "CBUGS123",
+        threadTs: undefined,
+        cleanedText: "app is broken",
+      },
+    },
+    {
+      level: "info",
+      event: "slack.app_mention.reply.success",
+      details: {
+        channel: "CBUGS123",
+        threadTs: undefined,
+        ts: undefined,
+      },
+    },
+    {
+      level: "info",
+      event: "slack.events.completed",
+      details: {
+        eventType: "app_mention",
+        outcome: "handled",
+        reason: undefined,
+      },
+    },
+  ]);
 });
 
 test("POST /slack/events replies in-thread when the mention came from a thread", async () => {
@@ -217,4 +292,64 @@ test("POST /api/slack/post-message validates the text field", async () => {
 
   assert.equal(response.status, 400);
   assert.deepEqual(response.body, { error: "text is required" });
+});
+
+test("POST /slack/events logs failures from mention processing", async () => {
+  const { logger, entries } = createLoggerSpy();
+  const app = createApp({
+    signingSecret,
+    now: fixedNow,
+    logger,
+    slackService: {
+      handleAppMention: async () => {
+        throw new Error("boom");
+      },
+      postMessage: async () => ({}),
+    },
+  });
+
+  const payload = {
+    type: "event_callback",
+    event: {
+      type: "app_mention",
+      channel: "CBUGS123",
+      text: "<@UREPLAYX> app is broken",
+      ts: "171234.123",
+    },
+  };
+  const { rawBody, signature } = signPayload(payload);
+
+  const response = await request(app)
+    .post("/slack/events")
+    .set("Content-Type", "application/json")
+    .set("X-Slack-Request-Timestamp", String(fixedTimestamp))
+    .set("X-Slack-Signature", signature)
+    .send(rawBody);
+
+  assert.equal(response.status, 500);
+  assert.deepEqual(response.body, { error: "boom" });
+  assert.deepEqual(entries, [
+    {
+      level: "info",
+      event: "slack.events.received",
+      details: {
+        requestType: "event_callback",
+        eventType: "app_mention",
+        eventId: undefined,
+        channel: "CBUGS123",
+        user: undefined,
+        ts: "171234.123",
+        threadTs: undefined,
+      },
+    },
+    {
+      level: "error",
+      event: "slack.events.failed",
+      details: {
+        eventType: "app_mention",
+        message: "boom",
+        details: undefined,
+      },
+    },
+  ]);
 });

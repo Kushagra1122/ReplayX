@@ -2,10 +2,15 @@ function stripMentionPrefix(text = "") {
   return text.replace(/^<@[^>]+>\s*/, "").trim();
 }
 
-function createSlackService({ slackClient, bugsChannelId }) {
+function createSlackService({ slackClient, bugsChannelId, logger }) {
   return {
     async handleAppMention(event) {
       if (bugsChannelId && event.channel !== bugsChannelId) {
+        logger.info("slack.app_mention.ignored", {
+          channel: event.channel,
+          expectedChannel: bugsChannelId,
+          reason: "channel_not_enabled",
+        });
         return { ignored: true, reason: "channel_not_enabled" };
       }
 
@@ -13,12 +18,27 @@ function createSlackService({ slackClient, bugsChannelId }) {
       const replyText = cleanedText
         ? `ReplayX received your bug report: ${cleanedText}`
         : "ReplayX received your message in #bugs.";
+      const threadTs = event.thread_ts;
 
-      return slackClient.postMessage({
+      logger.info("slack.app_mention.reply.attempt", {
+        channel: event.channel,
+        threadTs,
+        cleanedText,
+      });
+
+      const result = await slackClient.postMessage({
         channel: event.channel,
         text: replyText,
-        threadTs: event.thread_ts,
+        threadTs,
       });
+
+      logger.info("slack.app_mention.reply.success", {
+        channel: event.channel,
+        threadTs,
+        ts: result?.ts,
+      });
+
+      return result;
     },
 
     async postMessage({ channel, text, threadTs }) {
