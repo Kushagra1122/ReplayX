@@ -4,7 +4,7 @@ This folder contains the ReplayX Slack service as a self-contained package.
 
 ## Render deployment
 
-The repo root now includes a `render.yaml` Blueprint that deploys this folder as a Render web service.
+Deploy this folder as a standalone Render web service if you want Slack in the live demo path.
 
 After the service is created in Render, set the Slack app Event Subscriptions request URL to:
 
@@ -15,6 +15,11 @@ Required environment variables in Render:
 - `SLACK_SIGNING_SECRET`
 - `SLACK_BOT_TOKEN`
 - `SLACK_BUGS_CHANNEL_ID`
+
+Optional environment variables for the hackathon demo flow:
+
+- `REPLAYX_DASHBOARD_URL`: base URL for the ReplayX dashboard handoff, for example `https://replayx.app`
+- `REPLAYX_GOLDEN_INCIDENT_ID`: incident slug used for Slack intake handoff, defaults to `checkout-race-condition`
 
 ## Structure
 
@@ -31,3 +36,11 @@ Required environment variables in Render:
 - `src/modules/slack/routes/events.js`: `POST /slack/events`
 - `src/modules/slack/routes/api.js`: `POST /api/slack/post-message`
 - `test/app.test.js`: service tests
+
+## Demo role
+
+For the hackathon demo, Slack is the intake trigger into ReplayX:
+
+1. A user reports a bug by mentioning ReplayX in the bugs channel.
+2. ReplayX acknowledges the report and returns a handoff target for the golden incident flow.
+3. The demo then moves into the ReplayX dashboard replay, where diagnosis, fix, proof, and artifacts are shown.

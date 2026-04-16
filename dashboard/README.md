@@ -1,5 +1,15 @@
-# Dashboard
+# ReplayX Dashboard
 
-This directory is reserved for the hackathon-facing ReplayX dashboard or replay UI.
+Judge-facing Next.js replay UI for ReplayX.
 
-Prefer replayable run artifacts over expensive live orchestration for the first demo.
+This app is intentionally replay-first:
+
+- it reads saved artifacts from `../artifacts`
+- it reads seeded incident metadata from `../incidents`
+- it does not depend on live backend calls
+- it defaults to the golden incident replay flow
+
+Primary route:
+
+- `/` shows the golden incident overview
+- `/incidents/[incidentId]` shows a full replay page

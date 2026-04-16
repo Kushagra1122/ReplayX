@@ -28,6 +28,14 @@ export const replayXDiagnosisWorkerStatuses = ["completed", "weak_signal", "bloc
 
 export type ReplayXDiagnosisWorkerStatus = (typeof replayXDiagnosisWorkerStatuses)[number];
 
+export const replayXFixStrategyIds = ["minimal_fix", "safe_fix", "durable_fix"] as const;
+
+export type ReplayXFixStrategyId = (typeof replayXFixStrategyIds)[number];
+
+export const replayXFixWorkerStatuses = ["completed", "blocked", "verification_failed"] as const;
+
+export type ReplayXFixWorkerStatus = (typeof replayXFixWorkerStatuses)[number];
+
 export const replayXIncidentClasses = [
   "checkout-race-condition",
   "auth-token-session-failure",
@@ -192,6 +200,8 @@ export interface ReplayXRuntimeConfig {
   codexReproWorkerTimeoutMs: number;
   codexDiagnosisWorkersEnabled: boolean;
   codexDiagnosisWorkerTimeoutMs: number;
+  codexFixWorkersEnabled: boolean;
+  codexFixWorkerTimeoutMs: number;
 }
 
 export interface ReplayXPhaseDefinition {
@@ -336,4 +346,161 @@ export interface ReplayXRunPlan {
   incident: ReplayXIncidentPointer;
   runtime: ReplayXRuntimeConfig;
   phases: ReplayXPhaseDefinition[];
+}
+
+export interface ReplayXFixWorkerOutput {
+  strategy: ReplayXFixStrategyId;
+  status: ReplayXFixWorkerStatus;
+  summary: string;
+  files_changed: string[];
+  verification_command: string;
+  verification_result: string;
+  blast_radius: "low" | "medium" | "high";
+  rollback_note: string;
+  risk_note: string;
+  score: number;
+  demo_summary: string;
+}
+
+export interface ReplayXFixWorkerRunRecord {
+  strategy: ReplayXFixStrategyId;
+  mode: "codex-sdk" | "local-heuristic";
+  thread_id: string | null;
+  output: ReplayXFixWorkerOutput;
+  raw_response: string | null;
+  error: string | null;
+}
+
+export interface ReplayXFixArenaPhaseOutput {
+  schemaVersion: 1;
+  phase: "fix-arena";
+  incidentId: string;
+  prompt_version: string;
+  selected_diagnosis_worker: ReplayXDiagnosisWorkerId | null;
+  selected_diagnosis: string;
+  worker_results: ReplayXFixWorkerRunRecord[];
+  winner: ReplayXFixStrategyId | null;
+  winner_summary: string;
+  winner_changed_files: string[];
+  ranking: Array<{
+    rank: number;
+    strategy: ReplayXFixStrategyId;
+    score: number;
+    status: ReplayXFixWorkerStatus;
+  }>;
+  demo_summary: string;
+}
+
+export interface ReplayXReviewFinding {
+  severity: "critical" | "important" | "suggestion";
+  file: string;
+  issue: string;
+}
+
+export interface ReplayXRegressionProof {
+  test_type: "unit" | "integration" | "script" | "manual_check";
+  target_files: string[];
+  why_this_test: string;
+  verification_command: string;
+  demo_summary: string;
+}
+
+export interface ReplayXReviewAndRegressionPhaseOutput {
+  schemaVersion: 1;
+  phase: "review-and-regression";
+  incidentId: string;
+  review_verdict: "pass" | "fail";
+  findings: ReplayXReviewFinding[];
+  residual_risk: string;
+  regression_proof: ReplayXRegressionProof;
+  demo_summary: string;
+}
+
+export interface ReplayXPostmortemAndSkillPhaseOutput {
+  schemaVersion: 1;
+  phase: "postmortem-and-skill";
+  incidentId: string;
+  postmortem_path: string;
+  postmortem_summary: string;
+  skill_path: string;
+  skill_summary: string;
+  demo_summary: string;
+}
+
+export interface ReplayXDashboardReplayArtifact {
+  schemaVersion: 1;
+  incidentId: string;
+  incident_card: {
+    title: string;
+    service: string;
+    severity: string;
+    symptom: string;
+    customerImpact: string;
+  };
+  timeline: Array<{
+    step: string;
+    title: string;
+    summary: string;
+    status: "completed" | "highlighted";
+  }>;
+  worker_cards: Array<{
+    worker: string;
+    specialty: string;
+    diagnosis: string;
+    confidence: number;
+    status: string;
+  }>;
+  winner_card: {
+    worker: string;
+    diagnosis: string;
+    confidence: number;
+    winning_reason: string;
+  };
+  fix_card: {
+    strategy: string;
+    summary: string;
+    changed_files: string[];
+    verification_result: string;
+  };
+  proof_card: {
+    review_verdict: string;
+    regression_command: string;
+    regression_summary: string;
+  };
+  postmortem_card: {
+    summary: string;
+    path: string;
+  };
+  skill_card: {
+    summary: string;
+    path: string;
+  };
+  before_after: {
+    before: string;
+    after: string;
+  };
+  demo_summary: string;
+}
+
+export interface ReplayXSlackIntakeArtifact {
+  schemaVersion: 1;
+  incidentId: string;
+  acknowledgement_message: string;
+  incident_summary: string;
+  handoff_target: string;
+  replay_target: string;
+}
+
+export interface ReplayXDemoScriptBeat {
+  timestamp: string;
+  screen: string;
+  narration: string;
+  proof_point: string;
+}
+
+export interface ReplayXDemoScriptArtifact {
+  schemaVersion: 1;
+  incidentId: string;
+  beats: ReplayXDemoScriptBeat[];
+  closing_line: string;
 }

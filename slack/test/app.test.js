@@ -125,12 +125,13 @@ test("POST /slack/events replies to app mentions in the bugs channel", async () 
   const app = createApp({
     signingSecret,
     bugsChannelId: "CBUGS123",
+    dashboardBaseUrl: "https://replayx.app",
     now: fixedNow,
     logger,
     slackClient: {
       postMessage: async (payload) => {
         calls.push(payload);
-        return { posted: true };
+        return { posted: true, ts: "171234.200" };
       },
     },
   });
@@ -157,10 +158,22 @@ test("POST /slack/events replies to app mentions in the bugs channel", async () 
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0], {
     channel: "CBUGS123",
-    text: "ReplayX received your bug report: app is broken",
+    text: [
+      "ReplayX logged this bug report: app is broken",
+      "Next: routing it into the ReplayX incident flow for `incident-checkout-race-001`.",
+      "Dashboard handoff: https://replayx.app/replay/incident-checkout-race-001",
+    ].join("\n"),
     threadTs: undefined,
   });
-  assert.deepEqual(response.body, { ok: true, result: { posted: true } });
+  assert.deepEqual(response.body, {
+    ok: true,
+    result: {
+      posted: true,
+      ts: "171234.200",
+      incidentId: "incident-checkout-race-001",
+      handoffTarget: "https://replayx.app/replay/incident-checkout-race-001",
+    },
+  });
   assert.deepEqual(entries, [
     {
       level: "info",
@@ -182,6 +195,8 @@ test("POST /slack/events replies to app mentions in the bugs channel", async () 
         channel: "CBUGS123",
         threadTs: undefined,
         cleanedText: "app is broken",
+        goldenIncidentId: "incident-checkout-race-001",
+        handoffTarget: "https://replayx.app/replay/incident-checkout-race-001",
       },
     },
     {
@@ -190,7 +205,7 @@ test("POST /slack/events replies to app mentions in the bugs channel", async () 
       details: {
         channel: "CBUGS123",
         threadTs: undefined,
-        ts: undefined,
+        ts: "171234.200",
       },
     },
     {
@@ -242,10 +257,21 @@ test("POST /slack/events replies in-thread when the mention came from a thread",
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0], {
     channel: "CBUGS123",
-    text: "ReplayX received your bug report: still broken in thread",
+    text: [
+      "ReplayX logged this bug report: still broken in thread",
+      "Next: routing it into the ReplayX incident flow for `incident-checkout-race-001`.",
+      "Dashboard handoff: /replay/incident-checkout-race-001",
+    ].join("\n"),
     threadTs: "171234.100",
   });
-  assert.deepEqual(response.body, { ok: true, result: { posted: true } });
+  assert.deepEqual(response.body, {
+    ok: true,
+    result: {
+      posted: true,
+      incidentId: "incident-checkout-race-001",
+      handoffTarget: "/replay/incident-checkout-race-001",
+    },
+  });
 });
 
 test("POST /api/slack/post-message posts to the default bugs channel", async () => {

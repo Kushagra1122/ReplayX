@@ -11,7 +11,16 @@ import {
   runDiagnosisArenaPhase,
   writeDiagnosisArenaArtifacts
 } from "./phases/diagnosis-arena.js";
+import { runFixArenaPhase, writeFixArenaArtifacts } from "./phases/fix-arena.js";
+import {
+  runPostmortemAndSkillPhase,
+  writePostmortemAndSkillArtifacts
+} from "./phases/postmortem-and-skill.js";
 import { runReproPhase, writeReproArtifacts } from "./phases/repro.js";
+import {
+  runReviewAndRegressionPhase,
+  writeReviewAndRegressionArtifacts
+} from "./phases/review-and-regression.js";
 import type { ReplayXIncidentPointer, ReplayXRunPlan, ReplayXRuntimeConfig } from "./types.js";
 
 const defaultRuntimeConfig = (repoRoot: string): ReplayXRuntimeConfig => ({
@@ -22,7 +31,9 @@ const defaultRuntimeConfig = (repoRoot: string): ReplayXRuntimeConfig => ({
   codexReproWorkerEnabled: process.env.REPLAYX_USE_CODEX_REPRO_WORKER !== "0",
   codexReproWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_REPRO_TIMEOUT_MS ?? "8000"),
   codexDiagnosisWorkersEnabled: process.env.REPLAYX_USE_CODEX_DIAGNOSIS_WORKERS !== "0",
-  codexDiagnosisWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_DIAGNOSIS_TIMEOUT_MS ?? "10000")
+  codexDiagnosisWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_DIAGNOSIS_TIMEOUT_MS ?? "10000"),
+  codexFixWorkersEnabled: process.env.REPLAYX_USE_CODEX_FIX_WORKERS !== "0",
+  codexFixWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_FIX_TIMEOUT_MS ?? "12000")
 });
 
 const deriveIncidentPointer = (repoRoot: string, incidentArg?: string): ReplayXIncidentPointer => {
@@ -182,6 +193,143 @@ export const main = async (): Promise<void> => {
             repro: reproArtifacts,
             diagnosis: diagnosisArtifacts,
             challenger: challengerArtifacts
+          }
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
+
+  if (phase === "fix-arena") {
+    if (!incidentPath) {
+      throw new Error("Phase 'fix-arena' requires a path to a normalized incident JSON file.");
+    }
+
+    const repoRoot = process.cwd();
+    const runtime = defaultRuntimeConfig(repoRoot);
+    const incident = await loadNormalizedIncident(path.resolve(repoRoot, incidentPath));
+    const reproResult = await runReproPhase(incident, runtime);
+    const reproArtifacts = await writeReproArtifacts(runtime, incident, reproResult);
+    const diagnosisResult = await runDiagnosisArenaPhase(incident, runtime, reproResult);
+    const diagnosisArtifacts = await writeDiagnosisArenaArtifacts(runtime, incident, diagnosisResult);
+    const challengerResult = runChallengerValidationPhase(incident, diagnosisResult);
+    const challengerArtifacts = await writeChallengerValidationArtifacts(
+      runtime,
+      incident,
+      challengerResult
+    );
+    const fixResult = runFixArenaPhase(incident, diagnosisResult, challengerResult);
+    const fixArtifacts = await writeFixArenaArtifacts(runtime, incident, fixResult);
+
+    console.log(
+      JSON.stringify(
+        {
+          ...fixResult,
+          artifact_paths: {
+            repro: reproArtifacts,
+            diagnosis: diagnosisArtifacts,
+            challenger: challengerArtifacts,
+            fix: fixArtifacts
+          }
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
+
+  if (phase === "review-and-regression") {
+    if (!incidentPath) {
+      throw new Error(
+        "Phase 'review-and-regression' requires a path to a normalized incident JSON file."
+      );
+    }
+
+    const repoRoot = process.cwd();
+    const runtime = defaultRuntimeConfig(repoRoot);
+    const incident = await loadNormalizedIncident(path.resolve(repoRoot, incidentPath));
+    const reproResult = await runReproPhase(incident, runtime);
+    const reproArtifacts = await writeReproArtifacts(runtime, incident, reproResult);
+    const diagnosisResult = await runDiagnosisArenaPhase(incident, runtime, reproResult);
+    const diagnosisArtifacts = await writeDiagnosisArenaArtifacts(runtime, incident, diagnosisResult);
+    const challengerResult = runChallengerValidationPhase(incident, diagnosisResult);
+    const challengerArtifacts = await writeChallengerValidationArtifacts(
+      runtime,
+      incident,
+      challengerResult
+    );
+    const fixResult = runFixArenaPhase(incident, diagnosisResult, challengerResult);
+    const fixArtifacts = await writeFixArenaArtifacts(runtime, incident, fixResult);
+    const reviewResult = runReviewAndRegressionPhase(incident, fixResult);
+    const reviewArtifacts = await writeReviewAndRegressionArtifacts(runtime, incident, reviewResult);
+
+    console.log(
+      JSON.stringify(
+        {
+          ...reviewResult,
+          artifact_paths: {
+            repro: reproArtifacts,
+            diagnosis: diagnosisArtifacts,
+            challenger: challengerArtifacts,
+            fix: fixArtifacts,
+            review: reviewArtifacts
+          }
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
+
+  if (phase === "postmortem-and-skill" || phase === "golden-run") {
+    if (!incidentPath) {
+      throw new Error(
+        "Phase 'postmortem-and-skill' requires a path to a normalized incident JSON file."
+      );
+    }
+
+    const repoRoot = process.cwd();
+    const runtime = defaultRuntimeConfig(repoRoot);
+    const incident = await loadNormalizedIncident(path.resolve(repoRoot, incidentPath));
+    const reproResult = await runReproPhase(incident, runtime);
+    const reproArtifacts = await writeReproArtifacts(runtime, incident, reproResult);
+    const diagnosisResult = await runDiagnosisArenaPhase(incident, runtime, reproResult);
+    const diagnosisArtifacts = await writeDiagnosisArenaArtifacts(runtime, incident, diagnosisResult);
+    const challengerResult = runChallengerValidationPhase(incident, diagnosisResult);
+    const challengerArtifacts = await writeChallengerValidationArtifacts(
+      runtime,
+      incident,
+      challengerResult
+    );
+    const fixResult = runFixArenaPhase(incident, diagnosisResult, challengerResult);
+    const fixArtifacts = await writeFixArenaArtifacts(runtime, incident, fixResult);
+    const reviewResult = runReviewAndRegressionPhase(incident, fixResult);
+    const reviewArtifacts = await writeReviewAndRegressionArtifacts(runtime, incident, reviewResult);
+    const artifactResult = await runPostmortemAndSkillPhase(
+      runtime,
+      incident,
+      diagnosisResult,
+      challengerResult,
+      fixResult,
+      reviewResult
+    );
+    const artifactPaths = await writePostmortemAndSkillArtifacts(runtime, incident, artifactResult);
+
+    console.log(
+      JSON.stringify(
+        {
+          ...artifactResult,
+          artifact_paths: {
+            repro: reproArtifacts,
+            diagnosis: diagnosisArtifacts,
+            challenger: challengerArtifacts,
+            fix: fixArtifacts,
+            review: reviewArtifacts,
+            final: artifactPaths
           }
         },
         null,

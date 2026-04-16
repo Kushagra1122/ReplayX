@@ -8,6 +8,8 @@ const { createSlackService } = require("./service");
 function createSlackModule({
   signingSecret = process.env.SLACK_SIGNING_SECRET,
   bugsChannelId = process.env.SLACK_BUGS_CHANNEL_ID,
+  dashboardBaseUrl = process.env.REPLAYX_DASHBOARD_URL,
+  goldenIncidentId = process.env.REPLAYX_GOLDEN_INCIDENT_ID,
   slackService,
   slackClient,
   logger,
@@ -21,6 +23,8 @@ function createSlackModule({
     createSlackService({
       slackClient: effectiveSlackClient,
       bugsChannelId,
+      dashboardBaseUrl,
+      goldenIncidentId,
       logger: effectiveLogger,
     });
   const controller = createSlackController({
