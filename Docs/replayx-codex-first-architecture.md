@@ -259,13 +259,13 @@ The challenger must:
 
 ### Phase 5: Fix Arena
 
-Run three fix workers in parallel:
+Generate three bounded fix strategy candidates:
 
 - minimal fix
 - safest fix
 - durable fix
 
-Each fix worker must:
+Each fix strategy candidate must:
 
 - patch only the permitted files
 - run required verification

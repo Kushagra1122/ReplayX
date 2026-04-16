@@ -101,12 +101,17 @@ ReplayX now has two environment surfaces:
 Root `.env` values are optional. The orchestrator already has defaults for:
 
 - `REPLAYX_CODEX_MODEL`
+- `REPLAYX_MAX_PARALLEL_WORKERS`
 - `REPLAYX_USE_CODEX_REPRO_WORKER`
 - `REPLAYX_CODEX_REPRO_TIMEOUT_MS`
 - `REPLAYX_USE_CODEX_DIAGNOSIS_WORKERS`
 - `REPLAYX_CODEX_DIAGNOSIS_TIMEOUT_MS`
-- `REPLAYX_USE_CODEX_FIX_WORKERS`
-- `REPLAYX_CODEX_FIX_TIMEOUT_MS`
+
+Current worker behavior:
+
+- Repro uses at most one optional live Codex worker.
+- Diagnosis runs six specialist workers total, capped by `REPLAYX_MAX_PARALLEL_WORKERS`.
+- Fix arena is currently replay-safe deterministic strategy generation, not live Codex worker execution.
 
 Important auth note:
 

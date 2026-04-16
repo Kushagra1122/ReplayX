@@ -222,8 +222,6 @@ export interface ReplayXRuntimeConfig {
   codexReproWorkerTimeoutMs: number;
   codexDiagnosisWorkersEnabled: boolean;
   codexDiagnosisWorkerTimeoutMs: number;
-  codexFixWorkersEnabled: boolean;
-  codexFixWorkerTimeoutMs: number;
 }
 
 export interface ReplayXPhaseDefinition {

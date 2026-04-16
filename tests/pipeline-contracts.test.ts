@@ -116,9 +116,7 @@ test("skill match finds a canonical skill when service and incident class align"
     codexReproWorkerEnabled: false,
     codexReproWorkerTimeoutMs: 1,
     codexDiagnosisWorkersEnabled: false,
-    codexDiagnosisWorkerTimeoutMs: 1,
-    codexFixWorkersEnabled: false,
-    codexFixWorkerTimeoutMs: 1
+    codexDiagnosisWorkerTimeoutMs: 1
   };
 
   try {

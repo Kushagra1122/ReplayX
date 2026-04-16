@@ -32,13 +32,11 @@ const defaultRuntimeConfig = (repoRoot: string): ReplayXRuntimeConfig => ({
   repoRoot,
   artifactsRoot: path.join(repoRoot, "artifacts"),
   defaultModel: process.env.REPLAYX_CODEX_MODEL ?? "gpt-5-codex",
-  maxParallelWorkers: 4,
+  maxParallelWorkers: Number(process.env.REPLAYX_MAX_PARALLEL_WORKERS ?? "4"),
   codexReproWorkerEnabled: process.env.REPLAYX_USE_CODEX_REPRO_WORKER !== "0",
   codexReproWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_REPRO_TIMEOUT_MS ?? "30000"),
   codexDiagnosisWorkersEnabled: process.env.REPLAYX_USE_CODEX_DIAGNOSIS_WORKERS !== "0",
-  codexDiagnosisWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_DIAGNOSIS_TIMEOUT_MS ?? "45000"),
-  codexFixWorkersEnabled: process.env.REPLAYX_USE_CODEX_FIX_WORKERS !== "0",
-  codexFixWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_FIX_TIMEOUT_MS ?? "60000")
+  codexDiagnosisWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_DIAGNOSIS_TIMEOUT_MS ?? "45000")
 });
 
 const deriveIncidentPointer = (repoRoot: string, incidentArg?: string): ReplayXIncidentPointer => {

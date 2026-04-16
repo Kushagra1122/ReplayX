@@ -22,7 +22,7 @@ Run bounded diagnosis workers in parallel. Prefer evidence density, disproof, an
 Take the strongest diagnosis candidates and try to falsify them. Do not accept a root cause without surviving counter-checks.
 
 6. Fix arena
-Run bounded fix workers in parallel, typically minimal, safest, and durable variants. Prefer correctness and low blast radius over larger refactors.
+Generate bounded fix strategy candidates, typically minimal, safest, and durable variants, and rank them for the replay-safe flow. Prefer correctness and low blast radius over larger refactors.
 
 7. Review and regression verification plan
 Review the winning fix proposal, define the verification commands that must run after patch application, and veto the proposal if regression risk is not justified.
