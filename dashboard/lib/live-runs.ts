@@ -1,4 +1,4 @@
-import { promises as fs } from "node:fs";
+import { existsSync, promises as fs } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -69,7 +69,28 @@ export type LiveRunOptions = {
   phaseDelayMs?: number;
 };
 
-const defaultRepoRoot = process.cwd();
+const resolveDefaultRepoRoot = (startDirectory: string): string => {
+  let currentDirectory = path.resolve(startDirectory);
+
+  while (true) {
+    if (
+      existsSync(path.join(currentDirectory, "incidents")) &&
+      existsSync(path.join(currentDirectory, "orchestrator"))
+    ) {
+      return currentDirectory;
+    }
+
+    const parentDirectory = path.dirname(currentDirectory);
+
+    if (parentDirectory === currentDirectory) {
+      return path.resolve(startDirectory);
+    }
+
+    currentDirectory = parentDirectory;
+  }
+};
+
+const defaultRepoRoot = resolveDefaultRepoRoot(process.cwd());
 
 const livePhaseDefinitions: Array<{ id: ReplayXPhaseId; label: string }> = [
   { id: "incident-intake", label: "Incident intake" },
