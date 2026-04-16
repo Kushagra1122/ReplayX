@@ -19,12 +19,21 @@ function buildHandoffTarget({ dashboardBaseUrl, goldenIncidentId }) {
   return normalizedBaseUrl ? `${normalizedBaseUrl}${replayPath}` : replayPath;
 }
 
-function buildAppMentionReply({ cleanedText, goldenIncidentId, handoffTarget }) {
+function buildLiveHandoffTarget({ dashboardBaseUrl, livePath }) {
+  const normalizedBaseUrl = normalizeBaseUrl(dashboardBaseUrl);
+
+  return normalizedBaseUrl ? `${normalizedBaseUrl}${livePath}` : livePath;
+}
+
+function buildAppMentionReply({ cleanedText, goldenIncidentId, handoffTarget, runId }) {
   const bugSummary = cleanedText || "No bug details were included.";
+  const runLine = runId
+    ? `ReplayX started live orchestration run \`${runId}\`.`
+    : `Next: routing it into the ReplayX incident flow for \`${goldenIncidentId}\`.`;
 
   return [
     `ReplayX logged this bug report: ${bugSummary}`,
-    `Next: routing it into the ReplayX incident flow for \`${goldenIncidentId}\`.`,
+    runLine,
     `Dashboard handoff: ${handoffTarget}`,
   ].join("\n");
 }
@@ -34,6 +43,7 @@ function createSlackService({
   bugsChannelId,
   dashboardBaseUrl,
   goldenIncidentId = DEFAULT_GOLDEN_INCIDENT_ID,
+  replayXClient,
   logger,
 }) {
   return {
@@ -48,14 +58,46 @@ function createSlackService({
       }
 
       const cleanedText = stripMentionPrefix(event.text);
-      const handoffTarget = buildHandoffTarget({
+      let runId;
+      let handoffTarget = buildHandoffTarget({
         dashboardBaseUrl,
         goldenIncidentId,
       });
+
+      if (replayXClient?.isConfigured?.()) {
+        try {
+          const runResult = await replayXClient.createRun({
+            text: cleanedText || "No bug details were included.",
+            channel: event.channel,
+            threadTs: event.thread_ts,
+            user: event.user,
+          });
+          runId = runResult.runId;
+          handoffTarget = buildLiveHandoffTarget({
+            dashboardBaseUrl,
+            livePath: runResult.livePath || `/live/${encodeURIComponent(runId)}`,
+          });
+          logger.info("slack.replayx_run.created", {
+            channel: event.channel,
+            threadTs: event.thread_ts,
+            runId,
+            handoffTarget,
+          });
+        } catch (error) {
+          logger.error("slack.replayx_run.failed", {
+            channel: event.channel,
+            threadTs: event.thread_ts,
+            message: error.message,
+            details: error.details,
+          });
+        }
+      }
+
       const replyText = buildAppMentionReply({
         cleanedText,
         goldenIncidentId,
         handoffTarget,
+        runId,
       });
       const threadTs = event.thread_ts;
 
@@ -64,6 +106,7 @@ function createSlackService({
         threadTs,
         cleanedText,
         goldenIncidentId,
+        runId,
         handoffTarget,
       });
 
@@ -82,6 +125,7 @@ function createSlackService({
       return {
         ...result,
         incidentId: goldenIncidentId,
+        runId,
         handoffTarget,
       };
     },
@@ -107,6 +151,7 @@ function createSlackService({
 module.exports = {
   DEFAULT_GOLDEN_INCIDENT_ID,
   buildAppMentionReply,
+  buildLiveHandoffTarget,
   buildHandoffTarget,
   createSlackService,
   buildReplayPath,

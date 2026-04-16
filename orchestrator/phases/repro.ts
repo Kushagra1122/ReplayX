@@ -2,8 +2,6 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
-import { Codex } from "@openai/codex-sdk";
-
 import type {
   NormalizedIncident,
   ReplayXCommandExecutionResult,
@@ -189,6 +187,7 @@ const attemptCodexWorker = async (
   ].join("\n");
 
   try {
+    const { Codex } = await import("@openai/codex-sdk");
     const codex = new Codex();
     const thread = codex.startThread({
       workingDirectory: runtime.repoRoot,

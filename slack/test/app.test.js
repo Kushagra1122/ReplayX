@@ -196,6 +196,7 @@ test("POST /slack/events replies to app mentions in the bugs channel", async () 
         threadTs: undefined,
         cleanedText: "app is broken",
         goldenIncidentId: "incident-checkout-race-001",
+        runId: undefined,
         handoffTarget: "https://replayx.app/replay/incident-checkout-race-001",
       },
     },
@@ -218,6 +219,76 @@ test("POST /slack/events replies to app mentions in the bugs channel", async () 
       },
     },
   ]);
+});
+
+test("POST /slack/events creates a ReplayX live run when orchestrator client is configured", async () => {
+  const calls = [];
+  const runCalls = [];
+  const app = createApp({
+    signingSecret,
+    bugsChannelId: "CBUGS123",
+    dashboardBaseUrl: "https://dashboard.example",
+    now: fixedNow,
+    slackClient: {
+      postMessage: async (payload) => {
+        calls.push(payload);
+        return { posted: true, ts: "171234.201" };
+      },
+    },
+    replayXClient: {
+      isConfigured: () => true,
+      createRun: async (payload) => {
+        runCalls.push(payload);
+        return {
+          runId: "run_live123",
+          livePath: "/live/run_live123",
+        };
+      },
+    },
+  });
+
+  const payload = {
+    type: "event_callback",
+    event: {
+      type: "app_mention",
+      channel: "CBUGS123",
+      text: "<@UREPLAYX> checkout is overselling inventory",
+      ts: "171234.123",
+      user: "U123",
+    },
+  };
+  const { rawBody, signature } = signPayload(payload);
+
+  const response = await request(app)
+    .post("/slack/events")
+    .set("Content-Type", "application/json")
+    .set("X-Slack-Request-Timestamp", String(fixedTimestamp))
+    .set("X-Slack-Signature", signature)
+    .send(rawBody);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(runCalls[0], {
+    text: "checkout is overselling inventory",
+    channel: "CBUGS123",
+    threadTs: undefined,
+    user: "U123",
+  });
+  assert.deepEqual(calls[0], {
+    channel: "CBUGS123",
+    text: [
+      "ReplayX logged this bug report: checkout is overselling inventory",
+      "ReplayX started live orchestration run `run_live123`.",
+      "Dashboard handoff: https://dashboard.example/live/run_live123",
+    ].join("\n"),
+    threadTs: undefined,
+  });
+  assert.deepEqual(response.body.result, {
+    posted: true,
+    ts: "171234.201",
+    incidentId: "incident-checkout-race-001",
+    runId: "run_live123",
+    handoffTarget: "https://dashboard.example/live/run_live123",
+  });
 });
 
 test("POST /slack/events replies in-thread when the mention came from a thread", async () => {

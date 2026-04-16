@@ -10,9 +10,11 @@ function createApp({
   bugsChannelId = process.env.SLACK_BUGS_CHANNEL_ID,
   dashboardBaseUrl = process.env.REPLAYX_DASHBOARD_URL,
   goldenIncidentId = process.env.REPLAYX_GOLDEN_INCIDENT_ID,
+  orchestratorBaseUrl = process.env.REPLAYX_ORCHESTRATOR_URL,
   internalApiToken = process.env.REPLAYX_INTERNAL_API_TOKEN,
   slackService,
   slackClient,
+  replayXClient,
   logger,
   now = Date.now,
 } = {}) {
@@ -22,9 +24,11 @@ function createApp({
     bugsChannelId,
     dashboardBaseUrl,
     goldenIncidentId,
+    orchestratorBaseUrl,
     internalApiToken,
     slackService,
     slackClient,
+    replayXClient,
     logger,
     now,
   });

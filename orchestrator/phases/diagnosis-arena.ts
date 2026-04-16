@@ -1,8 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { Codex, type ThreadItem } from "@openai/codex-sdk";
-
 import {
   buildDiagnosisWorkerPrompt,
   diagnosisArenaPromptVersion,
@@ -525,18 +523,26 @@ const parseDiagnosisWorkerOutput = (
   };
 };
 
-const summarizeThreadItems = (items: ThreadItem[]): ReplayXDiagnosisWorkerTraceSummary => ({
+type CodexThreadItem = {
+  type: string;
+  command?: string;
+  status?: string;
+  exit_code?: number | null;
+  text?: string;
+};
+
+const summarizeThreadItems = (items: CodexThreadItem[]): ReplayXDiagnosisWorkerTraceSummary => ({
   item_types: uniqueStrings(items.map((item) => item.type)),
   commands: items
-    .filter((item): item is Extract<ThreadItem, { type: "command_execution" }> => item.type === "command_execution")
+    .filter((item) => item.type === "command_execution")
     .map((item) => ({
-      command: item.command,
-      status: item.status,
+      command: item.command ?? "",
+      status: item.status ?? "unknown",
       exit_code: item.exit_code ?? null
     })),
   reasoning: items
-    .filter((item): item is Extract<ThreadItem, { type: "reasoning" }> => item.type === "reasoning")
-    .map((item) => item.text)
+    .filter((item) => item.type === "reasoning")
+    .map((item) => item.text ?? "")
 });
 
 const runCodexDiagnosisWorker = async (
@@ -575,6 +581,7 @@ const runCodexDiagnosisWorker = async (
       excerpt: entry.excerpt
     }))
   });
+  const { Codex } = await import("@openai/codex-sdk");
   const codex = new Codex();
   const thread = codex.startThread({
     workingDirectory: runtime.repoRoot,
