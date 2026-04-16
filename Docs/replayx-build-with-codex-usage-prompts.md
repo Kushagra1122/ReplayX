@@ -48,6 +48,47 @@ Do not reuse these parts as implementation direction:
 
 Use the older plan for presentation quality. Use the Codex-first docs for implementation.
 
+## Current Progress Note
+
+The repository is already through the early setup phases:
+
+- scaffold exists
+- incident fixtures exist
+- demo app exists
+- basic operator docs exist
+
+The next important transition is this:
+
+- Codex SDK integration is now present in the repro and diagnosis phases
+- challenger and fix arena remain the next major worker phases to implement
+
+So if you are checking whether ReplayX is "already integrated with Codex," the precise answer is:
+
+- architecturally yes
+- in code, ReplayX already runs Codex-backed repro and diagnosis workers, with challenger and fix still pending
+
+## Prompt Quality Rules For Build Prompts
+
+Use these rules when pasting later-phase prompts into Codex:
+
+1. One build objective per prompt.
+2. Keep reusable instructions at the top and dynamic repo state later.
+3. Ask for concrete deliverables, artifacts, and verification.
+4. Tell Codex what not to do, not just what to do.
+5. Prefer bounded ownership over "implement everything" phrasing.
+6. Ask Codex to preserve machine-readable outputs where later phases depend on them.
+
+## Context Pack Rules For Build Prompts
+
+When running a later-phase build prompt, include only:
+
+- the relevant phase prompt
+- the current implementation files for that phase
+- the nearest incident fixtures or demo-app files
+- the verification commands for that phase
+
+Do not include the whole repository unless the phase actually needs it.
+
 ## Global Build Prompt
 
 Use this once at the start of a fresh Codex session.
@@ -207,6 +248,19 @@ Keep it short and practical.
 Put it in the most sensible Markdown file for operators.
 ```
 
+### Hackathon Pre-Seeding Checklist
+
+- Environment setup
+  Confirm `pnpm install` has been run, Node meets the repo requirement, and the team can start both the ReplayX repo and the demo app from a clean shell.
+- Seeded incidents
+  Open the three incident fixtures in `incidents/` and confirm the incident ids, failing commands, and suspected files still match the current demo app paths.
+- Demo app verification
+  Start the app with `pnpm demo-app`, hit `/health`, and rerun the three repro commands so each seeded failure still reproduces and each healthy control still passes.
+- End-to-end dry run
+  Run one full narrated practice incident from intake through bug repro, expected diagnosis target, intended fix area, and final artifact/story so the operator flow is stable.
+- Fallback dashboard recording
+  Capture one clean fallback run before demo day: terminal output, failing and healthy route results, and any dashboard-ready screenshots or saved JSON/event artifacts needed if live execution is flaky.
+
 ## Phase 4 Prompt: Build Repro Phase
 
 ```text
@@ -218,20 +272,30 @@ Given a normalized incident, ReplayX should narrow the failure surface and produ
 Requirements:
 - add a repro phase module under orchestrator/phases/
 - use Codex-first patterns, not Agents SDK patterns
+- this is the point where real Codex SDK-backed worker execution can start entering the codebase
 - define exact output JSON structure for this phase
 - wire it so orchestrator/main.ts can invoke it
 - if the demo app needs a simple helper script or command to support repro, add it
+- keep a safe local fallback path if the Codex worker is unavailable or times out
 
 The phase should output at least:
 - repro_confirmed
+- verification_status
 - failure_surface
 - repro_command
 - candidate_files
 - confidence
+- blocked_reason
 
 Verification:
 - phase can run against at least one seeded incident
 - output is structured and usable by later phases
+
+Done when:
+- `--phase repro` executes successfully
+- JSON output is emitted to stdout or artifacts
+- the failing and healthy controls are both captured
+- the phase can continue even if the Codex worker is skipped or fails
 ```
 
 ## Phase 5 Prompt: Build Diagnosis Arena
@@ -245,10 +309,14 @@ Run a bounded set of diagnosis workers and rank candidate root causes.
 Requirements:
 - do not use OpenAI Agents SDK
 - use ReplayX-owned orchestration with @openai/codex-sdk as the intended runtime model
+- this phase should introduce the first real bounded Codex worker fan-out for the project
 - define 4 to 8 strong diagnosis worker specializations for the hackathon build
 - each worker must return structured JSON
 - include ranking logic
 - keep the implementation inspectable and easy to demo
+- use one Codex thread per worker or another equally explicit isolation model
+- prefer structured outputs via `outputSchema`
+- preserve raw worker artifacts or summaries for later challenger use
 
 Worker output should include:
 - diagnosis
@@ -257,6 +325,7 @@ Worker output should include:
 - commands_run
 - candidate_files
 - falsification_note
+- status
 
 Also:
 - map the worker prompts to Docs/replayx-codex-first-prompts.md
@@ -265,6 +334,12 @@ Also:
 Verification:
 - arena can execute over a seeded incident input path
 - ranking output is deterministic enough for demo use
+
+Done when:
+- the arena can run more than one worker
+- each worker returns machine-readable output
+- a ranked shortlist is produced
+- later phases can consume the shortlist without manual interpretation
 ```
 
 ## Phase 6 Prompt: Build Challenger Validation
@@ -281,6 +356,7 @@ Requirements:
 - return validated and rejected candidates in a structured result
 - keep the logic hackathon-simple but real
 - optimize for explaining the phase clearly to judges
+- prefer counter-checks and falsification logic over generic commentary
 
 Do not:
 - add framework abstractions
@@ -289,6 +365,11 @@ Do not:
 Verification:
 - challenger can process mocked diagnosis results
 - output structure matches the prompt pack
+
+Done when:
+- at least one candidate can be rejected for a concrete reason
+- surviving candidates are clearly separated from rejected ones
+- the output is machine-readable and ready for fix selection
 ```
 
 ## Phase 7 Prompt: Build Fix Arena
@@ -309,6 +390,9 @@ Requirements:
 - rollback note
 - blast radius note
 - verification result capture
+- use bounded worker isolation between minimal_fix, safe_fix, and durable_fix
+- use output schemas or equivalently strict JSON parsing for worker results
+- preserve candidate fix artifacts for later review
 
 The fix arena should accept:
 - validated diagnosis
@@ -324,6 +408,7 @@ It should return:
 - rollback_note
 - risk_note
 - score
+- status
 
 Keep the hackathon focus:
 - make it work for the seeded incidents
@@ -332,6 +417,11 @@ Keep the hackathon focus:
 Verification:
 - fix arena can run on a mocked validated diagnosis
 - scoring and winner selection work
+
+Done when:
+- all three strategies can be invoked independently
+- verification result is captured for each strategy
+- a winner is selected without manual judgment
 ```
 
 ## Phase 8 Prompt: Build Review And Regression Proof
@@ -349,10 +439,16 @@ Requirements:
 - separate review output from test-writing output
 - align output shapes with Docs/replayx-codex-first-prompts.md
 - keep the implementation small and hackathon-usable
+- findings must come first in review output
+- regression proof must be narrow and incident-specific
 
 Verification:
 - review phase can process a mock fix result
 - regression-proof phase can target at least one seeded incident class
+
+Done when:
+- review can pass or fail a candidate fix
+- regression proof is explicit enough to automate later
 ```
 
 ## Phase 9 Prompt: Build Skill Writer And Postmortem
@@ -370,10 +466,16 @@ Requirements:
 - use a simple YAML or JSON schema
 - keep the schema precise enough for future fast-path matching
 - postmortem should separate facts from inference
+- use only validated upstream artifacts, not guessed narratives
 
 Verification:
 - skill artifact is created for a mocked successful run
 - postmortem output is generated from structured run data
+
+Done when:
+- a reusable skill artifact lands on disk
+- a concise postmortem lands on disk
+- both are derived from the actual run outputs
 ```
 
 ## Phase 10 Prompt: Wire End-To-End Orchestrator
@@ -399,10 +501,17 @@ Requirements:
 - persist or log structured outputs between phases
 - make the run easy to inspect during a demo
 - avoid hidden magic
+- preserve phase artifacts for replay and judging
+- keep the main path deterministic for the seeded incidents
 
 Verification:
 - one seeded incident can run through the full path
 - output artifacts are visible on disk or in console output
+
+Done when:
+- one seeded incident completes the full path
+- each phase leaves a usable artifact
+- the operator can narrate the flow from artifacts alone
 ```
 
 ## Phase 11 Prompt: Build Hackathon Dashboard

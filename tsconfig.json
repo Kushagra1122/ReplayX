@@ -3,6 +3,7 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "jsx": "react-jsx",
     "lib": [
       "ES2022"
     ],
@@ -16,6 +17,8 @@
     "skipLibCheck": true
   },
   "include": [
-    "orchestrator/**/*.ts"
+    "orchestrator/**/*.ts",
+    "demo_app/**/*.ts",
+    "demo_app/**/*.tsx"
   ]
 }
