@@ -1,4 +1,5 @@
 import { existsSync, promises as fs } from "node:fs";
+import { spawn } from "node:child_process";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -432,4 +433,27 @@ export const runReplayXLivePipeline = async (
 
 export const startReplayXLivePipeline = (runId: string, options: LiveRunOptions = {}): void => {
   void runReplayXLivePipeline(runId, options);
+};
+
+export const startReplayXLivePipelineDetached = (
+  runId: string,
+  options: LiveRunOptions = {}
+): void => {
+  const resolved = resolveOptions(options);
+  const moduleUrl = pathToFileURL(path.join(resolved.repoRoot, "dashboard/lib/live-runs.ts")).href;
+  const optionsJson = JSON.stringify(options);
+  const runIdJson = JSON.stringify(runId);
+  const script = [
+    `import * as moduleExports from ${JSON.stringify(moduleUrl)};`,
+    "const api = moduleExports.default ?? moduleExports;",
+    `await api.runReplayXLivePipeline(${runIdJson}, ${optionsJson});`
+  ].join(" ");
+
+  const child = spawn(process.execPath, ["--import", "tsx", "-e", script], {
+    cwd: resolved.repoRoot,
+    detached: true,
+    stdio: "ignore"
+  });
+
+  child.unref();
 };

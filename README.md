@@ -1,142 +1,203 @@
 # ReplayX
 
-ReplayX is a Codex-first incident response system for the Codex hackathon.
+ReplayX is a Codex-first incident response system built for the Codex hackathon.
 
-It is designed to turn an incident bundle into:
+Demo video: https://youtu.be/ko7e5ZREehE
+
+It turns a production-style incident into:
 
 - a ranked diagnosis
-- a proposed fix
-- a reviewed verification plan
+- a reviewed fix strategy
 - a regression verification plan
 - a postmortem
 - a reusable incident skill
 
-## Judge Start Here
+The core idea is simple: incident response should feel less like panic and more like playback.
 
-ReplayX should be understood as:
+## Submission Links
 
-- `demo_app/` is the broken target system
-- Slack is the intake trigger for the bug report
-- ReplayX is the incident-response product
-- the ReplayX dashboard is the main demo surface
-- Codex is the reasoning and coding engine behind the worker phases
+- Demo video: https://youtu.be/ko7e5ZREehE
 
-The golden hackathon flow is:
+## What Makes ReplayX Different
 
-1. show the bug in the demo app
-2. report it through Slack
-3. hand off into ReplayX
-4. show diagnosis worker fan-out
-5. show the chosen fix proposal and verification plan
-6. end on postmortem / reusable incident knowledge
+Most incident tooling helps teams route alerts, view logs, or chat around a problem. ReplayX is aimed at the harder step after that: converting messy evidence into an engineering-quality debugging flow.
 
-For the 2-minute video, optimize for one strong incident and one clear transformation, not broad feature coverage.
+ReplayX uses Codex as the reasoning and coding engine behind bounded specialists that:
 
-## Canonical Docs
+- inspect incident evidence
+- narrow the failure surface
+- compare competing root-cause hypotheses
+- challenge weak diagnoses
+- rank fix strategies
+- emit reusable incident knowledge
 
-- `AGENTS.md`: durable repo instructions and working rules
-- `PROMPTS.md`: stable root-level prompts, including Prompt 00
-- `PIPELINE.md`: canonical workflow phases and execution contract
-- `Docs/replayx-codex-first-architecture.md`: architecture decision and build direction
-- `Docs/replayx-codex-first-prompts.md`: full internal ReplayX prompt pack
-- `Docs/replayx-build-with-codex-usage-prompts.md`: phased operator prompts for using Codex to build ReplayX
+This is not a generic chatbot wrapped in an ops UI. It is a code-aware incident workflow designed around debugging, verification, and reuse.
 
-## Current Repo Status
+## Demo Flow
 
-This repository now contains the hackathon scaffold plus a replayable golden-path demo flow:
+The golden demo path is:
 
-- `orchestrator/`: TypeScript-first orchestration with implemented incident intake, skill match, repro, diagnosis, challenger, fix proposal, review-plan, and artifact phases for the golden run
-- `incidents/`: seeded incident bundles used by the golden replay
-- `skills/`: canonical copies of reusable skill artifacts emitted from the golden run
-- `demo_app/`: the seeded broken target system ReplayX diagnoses and fixes
-- `dashboard/`: a Next.js replay-first judge-facing dashboard
-- `slack/`: the Slack intake and handoff service
+1. A real bug appears in the seeded `demo_app/`.
+2. A user reports it in Slack.
+3. ReplayX starts an incident run.
+4. The dashboard shows diagnosis worker fan-out and the winning root cause.
+5. ReplayX presents the safest fix path and the proof required to trust it.
+6. The run ends with a postmortem and a reusable incident skill.
 
-The repo is still demo-first rather than production-complete. The golden path is artifact-driven and replay-safe so the 2-minute demo does not depend on a fragile fully live run.
+For hackathon judging, the main product surface is the dashboard, not the broken app or Slack bot in isolation.
 
-The important boundary is:
+## Why Codex Is Essential
 
-- the backend exists to generate and persist the golden run artifacts
-- the dashboard exists to turn those artifacts into the main ReplayX product surface
-- Slack exists as the intake trigger into the replay flow
-- later golden-path phases currently emit fix proposals and verification plans rather than applying real repository patches
-- replay reliability matters more than broad live orchestration during the demo
+ReplayX only works if the system behind it can do software-engineering work, not just summarize text.
 
-## Scaffold Layout
+The hard parts of incident response are:
 
-- `orchestrator/main.ts`: Node entrypoint that can run incident intake, skill match, repro, diagnosis, challenger, fix, review, and the golden artifact flow
-- `orchestrator/types.ts`: shared runtime and phase contracts
-- `orchestrator/phases/`: implemented golden-path backend phases
-- `package.json`: Node and TypeScript project definition with `@openai/codex-sdk` as the intended orchestration dependency
-- `tsconfig.json`: strict TypeScript configuration for the orchestrator
+- reading real repository context
+- understanding code and failure evidence together
+- proposing targeted fixes instead of vague advice
+- producing concrete verification steps
+- preserving reusable knowledge for the next incident
 
-## Core Architecture Decision
+ReplayX is built around `@openai/codex-sdk` and Codex-style repo-aware execution because those tasks are fundamentally coding-agent tasks.
 
-ReplayX should use:
+## Current Project State
 
-- `@openai/codex-sdk` for primary orchestration
-- Codex CLI for `codex exec`, local automation, and build workflows
+This repository contains a replay-safe, judge-friendly end-to-end implementation:
 
-ReplayX should not use the OpenAI Agents SDK as the core runtime.
+- `demo_app/`: seeded broken application with reproducible incidents
+- `incidents/`: realistic incident bundles for the golden path
+- `orchestrator/`: TypeScript orchestration phases for intake, skill match, repro, diagnosis, challenger, fix, review, and artifact writing
+- `dashboard/`: Next.js dashboard for replay and live run visualization
+- `slack/`: Slack intake and handoff service
+- `skills/`: reusable skill artifacts emitted from the golden run
 
-## Start Here
+Important implementation boundary:
 
-1. Read `AGENTS.md`.
-2. Read `Docs/replayx-codex-first-architecture.md`.
-3. Copy `.env.example` to `.env` if you want to tune Codex worker model selection or timeouts.
-4. If you want the Slack intake flow, copy `slack/.env.example` to `slack/.env` and fill in the Slack credentials plus the ReplayX handoff values.
-5. Run `pnpm install`.
-6. Generate the golden run artifacts with `pnpm golden-run incidents/checkout-race-condition.json`.
-7. Start the demo app with `pnpm demo-app`.
-8. Start the dashboard with `pnpm dashboard:dev`.
-9. Use Slack as the intake trigger and the dashboard as the main demo surface.
+- ReplayX already runs the golden path end to end
+- the flow is artifact-driven and replay-safe for demo reliability
+- later phases currently emit reviewed fix proposals and verification plans rather than automatically patching and validating a target repository
 
-## Environment
+That tradeoff is intentional. For a 2-minute hackathon demo, reliability and clarity beat fragile live patch execution.
 
-ReplayX now has two environment surfaces:
+## What ReplayX Produces
 
-- Root `.env` for orchestrator runtime knobs such as `REPLAYX_CODEX_MODEL` and worker enable/timeout flags.
-- `slack/.env` for the Slack intake service.
+For each incident run, ReplayX aims to preserve inspectable artifacts instead of hiding its reasoning in one opaque agent trace.
 
-Root `.env` values are optional. The orchestrator already has defaults for:
+Outputs include:
 
-- `REPLAYX_CODEX_MODEL`
-- `REPLAYX_MAX_PARALLEL_WORKERS`
-- `REPLAYX_USE_CODEX_REPRO_WORKER`
-- `REPLAYX_CODEX_REPRO_TIMEOUT_MS`
-- `REPLAYX_USE_CODEX_DIAGNOSIS_WORKERS`
-- `REPLAYX_CODEX_DIAGNOSIS_TIMEOUT_MS`
+- normalized incident bundle
+- per-phase JSON outputs
+- diagnosis rankings
+- challenger verdict
+- fix strategy recommendation
+- verification plan
+- postmortem
+- reusable skill artifact
 
-Current worker behavior:
+This makes the run replayable, auditable, and useful after the incident ends.
 
-- Repro uses at most one optional live Codex worker.
-- Diagnosis runs six specialist workers total, capped by `REPLAYX_MAX_PARALLEL_WORKERS`.
-- Fix arena is currently replay-safe deterministic strategy generation, not live Codex worker execution.
+## Architecture
 
-Important auth note:
+ReplayX follows a bounded phase model:
 
-- This repo does not read `OPENAI_API_KEY` directly.
-- Live Codex SDK worker execution depends on your existing Codex/OpenAI authentication on the local machine.
-- If that auth is unavailable, the replay-safe flow can still run with live workers disabled.
+1. Incident intake
+2. Fast-path skill match
+3. Repro and environment verification
+4. Diagnosis arena
+5. Challenger validation
+6. Fix arena
+7. Review and regression plan
+8. Postmortem and skill writing
 
-Slack service variables:
+This structure is deliberate. It gives the system stronger failure isolation, clearer artifacts, and a much better judge story than one unstructured agent run.
 
-- Required: `SLACK_SIGNING_SECRET`, `SLACK_BOT_TOKEN`, `SLACK_BUGS_CHANNEL_ID`
-- Optional for the handoff demo flow: `REPLAYX_DASHBOARD_URL`, `REPLAYX_GOLDEN_INCIDENT_ID`, `REPLAYX_INTERNAL_API_TOKEN`
-- See `slack/README.md` for deployment-specific notes.
+More detail:
 
-## Demo Commands
+- [PIPELINE.md](PIPELINE.md)
+- [Docs/replayx-architecture-diagram.md](Docs/replayx-architecture-diagram.md)
+- [Docs/replayx-codex-first-architecture.md](Docs/replayx-codex-first-architecture.md)
+- [Docs/replayx-codex-first-prompts.md](Docs/replayx-codex-first-prompts.md)
+
+## Run The Demo
+
+### 1. Install dependencies
 
 ```bash
-# 1. Generate the golden replay artifacts
-pnpm golden-run incidents/checkout-race-condition.json
-
-# 2. Run the broken target app
-pnpm demo-app
-
-# 3. Run the ReplayX dashboard
-pnpm dashboard:dev
-
-# 4. Optional: run the Slack service
-npm start --prefix slack
+pnpm install
+pnpm --dir dashboard install
+npm --prefix slack install
 ```
+
+### 2. Generate golden run artifacts
+
+```bash
+pnpm golden-run incidents/checkout-race-condition.json
+```
+
+### 3. Start the broken app
+
+```bash
+pnpm demo-app
+```
+
+### 4. Start the dashboard
+
+```bash
+pnpm --dir dashboard dev -- --port 3001
+```
+
+### 5. Optional: start Slack intake
+
+```bash
+npm --prefix slack start
+```
+
+### 6. Open the dashboard
+
+- overview: `http://localhost:3001/`
+- golden replay: `http://localhost:3001/replay/incident-checkout-race-001`
+
+For the live demo runbook, see [Docs/hackathon-demo-and-verification.md](Docs/hackathon-demo-and-verification.md).
+
+## Project Structure
+
+```text
+ReplayX/
+├── dashboard/      # Judge-facing Next.js UI
+├── demo_app/       # Seeded broken target app
+├── incidents/      # Incident fixtures used for replay
+├── orchestrator/   # Codex-first orchestration phases
+├── skills/         # Reusable incident skills
+├── slack/          # Slack intake and handoff service
+├── AGENTS.md
+├── PIPELINE.md
+└── PROMPTS.md
+```
+
+## Why This Is A Strong Hackathon Project
+
+ReplayX is ambitious in the right way:
+
+- it uses Codex for the part humans actually struggle with during incidents: debugging and fix reasoning
+- it turns agent output into durable engineering artifacts instead of one-off chat
+- it is easy to understand in a short demo
+- it is technically grounded in a real repo workflow
+- it creates a reusable memory loop through incident skills
+
+The project is not trying to show "AI can read logs." It is showing a credible new operating model for software incidents.
+
+## Known Limits
+
+- The current golden path optimizes for replay reliability over full live patch execution.
+- Slack is the intake trigger, not the main product surface.
+- The dashboard is currently polling-based for live runs rather than websocket-based.
+
+These are acceptable tradeoffs for the current hackathon scope and demo constraints.
+
+## References
+
+- Codex SDK: https://developers.openai.com/codex/sdk
+- Codex CLI: https://developers.openai.com/codex/cli
+- AGENTS.md guide: https://developers.openai.com/codex/guides/agents-md
+- Codex best practices: https://developers.openai.com/codex/learn/best-practices
+- Prompt engineering guide: https://developers.openai.com/api/docs/guides/prompt-engineering

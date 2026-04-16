@@ -1,6 +1,11 @@
-import { createReplayXRun, startReplayXLivePipeline } from "../../../../lib/live-runs";
+import {
+  createReplayXRun,
+  startReplayXLivePipeline,
+  startReplayXLivePipelineDetached
+} from "../../../../lib/live-runs";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const isAuthorized = (request: Request): boolean => {
   const expectedToken = process.env.REPLAYX_INTERNAL_API_TOKEN;
@@ -37,7 +42,12 @@ export async function POST(request: Request) {
     user: body.user
   });
 
-  startReplayXLivePipeline(run.runId);
+  try {
+    startReplayXLivePipelineDetached(run.runId);
+  } catch {
+    // Fallback for environments where detached process spawn is unavailable.
+    startReplayXLivePipeline(run.runId);
+  }
 
   return Response.json(
     {
