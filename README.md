@@ -22,26 +22,26 @@ It is designed to turn an incident bundle into:
 
 ## Current Repo Status
 
-This repository now contains the initial ReplayX hackathon scaffold plus the first real Codex-backed worker phases:
+This repository now contains the initial ReplayX hackathon scaffold plus the first real worker phases:
 
-- `orchestrator/`: TypeScript-first orchestrator entrypoint, run-plan types, and the implemented repro and diagnosis phases
+- `orchestrator/`: TypeScript-first orchestrator entrypoint, run-plan types, and the implemented repro, diagnosis, and challenger phases
 - `incidents/`: reserved for seeded incident bundles
 - `skills/`: reserved for reusable ReplayX skill artifacts
 - `demo_app/`: reserved for the small seeded app ReplayX will debug
 - `dashboard/`: reserved for the replayable hackathon dashboard
 
-The repo is still intentionally early. The scaffold is in place, the repro phase is implemented, and the diagnosis arena now runs bounded worker fan-out. Later phases such as challenger, fix arena, review, and postmortem remain placeholders.
+The repo is still intentionally early. The scaffold is in place, the repro phase is implemented, the diagnosis arena runs bounded worker fan-out, and challenger validation can reject weak or broad candidates before fix selection. Later phases such as fix arena, review, and postmortem remain placeholders.
 
 The important boundary is:
 
 - phases 1 to 3.5 are scaffold, incident, demo-app, and the first implemented worker orchestration
-- actual Codex SDK orchestration is now present in repro and diagnosis; challenger and fix workers are the next major implementation steps
+- actual Codex SDK orchestration is now present in repro and diagnosis; challenger validation is deterministic and ready for the hackathon demo; fix workers are the next major implementation step
 
 ## Scaffold Layout
 
 - `orchestrator/main.ts`: Node entrypoint that builds the current ReplayX run plan
 - `orchestrator/types.ts`: shared runtime and phase contracts
-- `orchestrator/phases/`: implemented repro and diagnosis modules plus placeholder modules for later phases
+- `orchestrator/phases/`: implemented repro, diagnosis, and challenger modules plus placeholder modules for later phases
 - `package.json`: Node and TypeScript project definition with `@openai/codex-sdk` as the intended orchestration dependency
 - `tsconfig.json`: strict TypeScript configuration for the orchestrator
 

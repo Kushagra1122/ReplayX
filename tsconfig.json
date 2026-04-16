@@ -19,6 +19,7 @@
   "include": [
     "orchestrator/**/*.ts",
     "demo_app/**/*.ts",
-    "demo_app/**/*.tsx"
+    "demo_app/**/*.tsx",
+    "tests/**/*.ts"
   ]
 }

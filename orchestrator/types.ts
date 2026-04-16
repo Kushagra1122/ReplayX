@@ -298,6 +298,40 @@ export interface ReplayXDiagnosisArenaPhaseOutput {
   };
 }
 
+export type ReplayXChallengerValidationStatus = "completed" | "no_clear_winner";
+
+export interface ReplayXChallengerRejectedCandidate {
+  worker: ReplayXDiagnosisWorkerId;
+  reason: string;
+}
+
+export interface ReplayXChallengerCandidateCheck {
+  name: string;
+  passed: boolean;
+  detail: string;
+}
+
+export interface ReplayXChallengerCandidateReview {
+  worker: ReplayXDiagnosisWorkerId;
+  decision: "validated" | "rejected";
+  support_score: number;
+  checks: ReplayXChallengerCandidateCheck[];
+}
+
+export interface ReplayXChallengerValidationPhaseOutput {
+  schemaVersion: 1;
+  phase: "challenger-validation";
+  incidentId: string;
+  prompt_version: string;
+  winner: ReplayXDiagnosisWorkerId | null;
+  validated: ReplayXDiagnosisWorkerId[];
+  rejected: ReplayXChallengerRejectedCandidate[];
+  winning_reason: string;
+  remaining_uncertainty: string;
+  status: ReplayXChallengerValidationStatus;
+  candidate_reviews: ReplayXChallengerCandidateReview[];
+}
+
 export interface ReplayXRunPlan {
   incident: ReplayXIncidentPointer;
   runtime: ReplayXRuntimeConfig;

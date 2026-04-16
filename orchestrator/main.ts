@@ -4,6 +4,10 @@ import process from "node:process";
 import { loadNormalizedIncident } from "./normalize-incident.js";
 import { replayXPhases } from "./phases/index.js";
 import {
+  runChallengerValidationPhase,
+  writeChallengerValidationArtifacts
+} from "./phases/challenger-validation.js";
+import {
   runDiagnosisArenaPhase,
   writeDiagnosisArenaArtifacts
 } from "./phases/diagnosis-arena.js";
@@ -140,6 +144,44 @@ export const main = async (): Promise<void> => {
           artifact_paths: {
             repro: reproArtifacts,
             diagnosis: diagnosisArtifacts
+          }
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
+
+  if (phase === "challenger-validation" || phase === "challenger") {
+    if (!incidentPath) {
+      throw new Error(
+        "Phase 'challenger-validation' requires a path to a normalized incident JSON file."
+      );
+    }
+
+    const repoRoot = process.cwd();
+    const runtime = defaultRuntimeConfig(repoRoot);
+    const incident = await loadNormalizedIncident(path.resolve(repoRoot, incidentPath));
+    const reproResult = await runReproPhase(incident, runtime);
+    const reproArtifacts = await writeReproArtifacts(runtime, incident, reproResult);
+    const diagnosisResult = await runDiagnosisArenaPhase(incident, runtime, reproResult);
+    const diagnosisArtifacts = await writeDiagnosisArenaArtifacts(runtime, incident, diagnosisResult);
+    const challengerResult = runChallengerValidationPhase(incident, diagnosisResult);
+    const challengerArtifacts = await writeChallengerValidationArtifacts(
+      runtime,
+      incident,
+      challengerResult
+    );
+
+    console.log(
+      JSON.stringify(
+        {
+          ...challengerResult,
+          artifact_paths: {
+            repro: reproArtifacts,
+            diagnosis: diagnosisArtifacts,
+            challenger: challengerArtifacts
           }
         },
         null,

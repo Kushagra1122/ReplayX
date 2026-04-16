@@ -60,12 +60,13 @@ The repository is already through the early setup phases:
 The next important transition is this:
 
 - Codex SDK integration is now present in the repro and diagnosis phases
-- challenger and fix arena remain the next major worker phases to implement
+- challenger validation is implemented as a deterministic adversarial gate over the diagnosis shortlist
+- fix arena remains the next major worker phase to implement
 
 So if you are checking whether ReplayX is "already integrated with Codex," the precise answer is:
 
 - architecturally yes
-- in code, ReplayX already runs Codex-backed repro and diagnosis workers, with challenger and fix still pending
+- in code, ReplayX already runs Codex-backed repro and diagnosis workers, with deterministic challenger validation ready and fix still pending
 
 ## Prompt Quality Rules For Build Prompts
 

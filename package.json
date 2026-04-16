@@ -16,6 +16,8 @@
     "demo-app:auth-refresh": "tsx demo_app/scripts/repro-auth-refresh.ts",
     "demo-app:null-shape": "tsx demo_app/scripts/repro-null-shape.ts",
     "repro-phase": "tsx orchestrator/main.ts --phase repro",
+    "challenger-phase": "tsx orchestrator/main.ts --phase challenger-validation",
+    "test": "node --import tsx --test tests/*.test.ts",
     "start": "node dist/orchestrator/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
