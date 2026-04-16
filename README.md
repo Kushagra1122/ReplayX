@@ -32,6 +32,11 @@ This repository now contains the initial ReplayX hackathon scaffold:
 
 The repo is still intentionally early. The scaffold is in place, but the phase modules remain placeholders until the later build prompts land.
 
+The important boundary is:
+
+- phases 1 to 3.5 are mostly scaffold, incident, and demo-app work
+- actual Codex SDK orchestration begins in the next phases when repro, diagnosis, challenger, and fix workers are wired
+
 ## Scaffold Layout
 
 - `orchestrator/main.ts`: Node entrypoint that builds the current ReplayX run plan

@@ -48,6 +48,24 @@ Do not reuse these parts as implementation direction:
 
 Use the older plan for presentation quality. Use the Codex-first docs for implementation.
 
+## Current Progress Note
+
+The repository is already through the early setup phases:
+
+- scaffold exists
+- incident fixtures exist
+- demo app exists
+- basic operator docs exist
+
+The next important transition is this:
+
+- actual Codex SDK integration starts when the repro, diagnosis, challenger, and fix phases are implemented
+
+So if you are checking whether ReplayX is "already integrated with Codex," the precise answer is:
+
+- architecturally yes
+- in code, the real Codex worker integration begins in the next phases
+
 ## Global Build Prompt
 
 Use this once at the start of a fresh Codex session.
@@ -231,6 +249,7 @@ Given a normalized incident, ReplayX should narrow the failure surface and produ
 Requirements:
 - add a repro phase module under orchestrator/phases/
 - use Codex-first patterns, not Agents SDK patterns
+- this is the point where real Codex SDK-backed worker execution can start entering the codebase
 - define exact output JSON structure for this phase
 - wire it so orchestrator/main.ts can invoke it
 - if the demo app needs a simple helper script or command to support repro, add it
@@ -258,6 +277,7 @@ Run a bounded set of diagnosis workers and rank candidate root causes.
 Requirements:
 - do not use OpenAI Agents SDK
 - use ReplayX-owned orchestration with @openai/codex-sdk as the intended runtime model
+- this phase should introduce the first real bounded Codex worker fan-out for the project
 - define 4 to 8 strong diagnosis worker specializations for the hackathon build
 - each worker must return structured JSON
 - include ranking logic

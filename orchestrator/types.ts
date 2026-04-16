@@ -110,6 +110,58 @@ export interface NormalizedIncident {
   acceptanceCriteria: string[];
 }
 
+export interface ReplayXCommandExecutionResult {
+  label: string;
+  command: string;
+  workingDirectory: string;
+  expectedExitCode: number;
+  actualExitCode: number | null;
+  matchedExpectation: boolean;
+  durationMs: number;
+  stdout: string;
+  stderr: string;
+}
+
+export interface ReplayXReproSignals {
+  stackTraceSources: string[];
+  recentChangeCommits: string[];
+  logSources: string[];
+}
+
+export interface ReplayXReproWorkerSummary {
+  failure_surface: string;
+  candidate_files: string[];
+  confidence: number;
+}
+
+export interface ReplayXCodexWorkerResult {
+  attempted: boolean;
+  mode: "codex-sdk" | "local-heuristic";
+  status: "completed" | "skipped" | "failed";
+  threadId: string | null;
+  output: ReplayXReproWorkerSummary | null;
+  error: string | null;
+}
+
+export interface ReplayXReproPhaseOutput {
+  schemaVersion: 1;
+  phase: "repro";
+  incidentId: string;
+  repro_confirmed: boolean;
+  verification_status: "confirmed" | "partially_confirmed" | "blocked";
+  failure_surface: string;
+  repro_command: string;
+  candidate_files: string[];
+  confidence: number;
+  blocked_reason: string | null;
+  command_results: {
+    failing: ReplayXCommandExecutionResult;
+    healthy: ReplayXCommandExecutionResult;
+  };
+  observed_signals: ReplayXReproSignals;
+  codex_worker: ReplayXCodexWorkerResult;
+}
+
 export interface ReplayXIncidentPointer {
   incidentId: string;
   inputPath: string;
@@ -121,6 +173,8 @@ export interface ReplayXRuntimeConfig {
   artifactsRoot: string;
   defaultModel: string;
   maxParallelWorkers: number;
+  codexReproWorkerEnabled: boolean;
+  codexReproWorkerTimeoutMs: number;
 }
 
 export interface ReplayXPhaseDefinition {

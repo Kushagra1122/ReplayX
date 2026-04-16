@@ -15,7 +15,7 @@ The target product turns an incident bundle into:
 
 ## Current Repo State
 
-This repository is currently documentation-first.
+This repository now contains the early ReplayX implementation scaffold.
 
 The canonical files right now are:
 
@@ -26,8 +26,20 @@ The canonical files right now are:
 - `Docs/replayx-codex-first-architecture.md`
 - `Docs/replayx-codex-first-prompts.md`
 - `Docs/replayx-build-with-codex-usage-prompts.md`
+- `orchestrator/`
+- `incidents/`
+- `demo_app/`
+- `dashboard/`
 
-Do not assume the future implementation files already exist.
+Current practical state:
+
+- phase 1 scaffold exists
+- phase 2 incident contract and fixtures exist
+- phase 3 demo app exists
+- phase 3.5 operator guidance exists
+- actual Codex worker orchestration starts in the next implementation phases, especially repro, diagnosis arena, challenger, and fix arena
+
+Do not assume later-phase orchestration is already implemented just because the directory structure exists.
 
 ## Architecture Rule
 
