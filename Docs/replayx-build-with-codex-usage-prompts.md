@@ -14,6 +14,25 @@ They are designed to:
 - stay Codex-first
 - keep work hackathon-scoped and demo-oriented
 
+## Demo-First Framing
+
+For the hackathon, keep this mental model explicit:
+
+- `demo_app/` is the broken target system
+- ReplayX is the incident-response product
+- Codex is the reasoning and coding brain inside ReplayX
+- the ReplayX dashboard or replay UI is the main judge-facing product surface
+- Slack is an intake trigger, not the whole product
+
+The demo should not feel like "we built a broken app." It should feel like:
+
+1. a real bug appears
+2. ReplayX ingests the incident
+3. Codex-powered workers reason about it
+4. ReplayX shows the diagnosis and fix path
+5. ReplayX proves the result
+6. ReplayX emits reusable knowledge
+
 ## How To Use This File
 
 Use one prompt at a time in Codex.
@@ -67,6 +86,19 @@ So if you are checking whether ReplayX is "already integrated with Codex," the p
 
 - architecturally yes
 - in code, ReplayX already runs Codex-backed repro and diagnosis workers, with deterministic challenger validation ready and fix still pending
+
+## Demo Strategy Rules
+
+From this point onward, optimize for the 2-minute demo video.
+
+That means:
+
+- show the broken app before showing architecture
+- make ReplayX, not the demo app, the visual star
+- prefer one golden incident over broad feature coverage
+- use deterministic replay artifacts where live Codex behavior is not stable enough
+- keep terminal output secondary to dashboard/replay visuals
+- keep Slack as the trigger into ReplayX, not the entire experience
 
 ## Prompt Quality Rules For Build Prompts
 
@@ -507,58 +539,89 @@ That means:
 - each fix strategy variant should map to one of those prompt sections
 - in-code fix worker prompts should not be improvised independently from the prompt pack
 
+### Phase 7 Demo Priority Shift
+
+From this phase onward, build for the demo first.
+
+That means:
+
+- the fix arena should produce outputs that can be shown clearly in the dashboard
+- the chosen fix should include a short demo-facing summary, not just raw internal data
+- if full live fix generation is unstable, preserve a replayable artifact-driven path that still proves the flow
+
 ## Phase 8 Prompt: Build Review And Regression Proof
 
 ```text
-Implement the ReplayX review phase and regression-proof phase.
+Implement the ReplayX dashboard replay UI and the review/regression proof artifacts needed for the demo.
 
 Goal:
-After a winning fix is selected, ReplayX should:
-- review the change
-- identify findings or pass it
-- add or specify a regression proof
+Create the first real ReplayX judge-facing product surface and make the winning fix legible through proof.
 
 Requirements:
-- separate review output from test-writing output
-- align output shapes with Docs/replayx-codex-first-prompts.md
-- keep the implementation small and hackathon-usable
-- findings must come first in review output
-- regression proof must be narrow and incident-specific
+- build a real `dashboard/` replay UI instead of leaving it as a placeholder
+- use one golden incident as the primary path, defaulting to the strongest seeded incident
+- render:
+  - incident summary
+  - failing signal
+  - diagnosis worker fan-out
+  - winning diagnosis
+  - selected fix
+  - review / regression proof
+  - postmortem / skill summary placeholders if upstream phases are not done yet
+- prefer deterministic replay from saved artifacts over a fully live unstable run
+- keep the UI simple, legible, and understandable in under 30 seconds
+- if review/regression are not fully live yet, use artifact-backed outputs that still show proof clearly
 
 Verification:
-- review phase can process a mock fix result
-- regression-proof phase can target at least one seeded incident class
+- the dashboard can render one complete golden-path run from saved artifacts
+- a first-time viewer can understand the flow without reading the codebase
+- the replay path works even if live Codex fan-out is disabled
 
 Done when:
-- review can pass or fail a candidate fix
-- regression proof is explicit enough to automate later
+- ReplayX has a real judge-facing frontend surface
+- one full replay run can be shown visually from incident intake through proof
+- the replay UI is strong enough to anchor the 2-minute video
 ```
 
 ### Phase 8 Operator Note
 
-At Phase 8, use `Docs/replayx-codex-first-prompts.md` as the internal prompt spec for both review and regression workers.
+At Phase 8, use `Docs/replayx-codex-first-prompts.md` as the internal prompt spec for both the dashboard replay artifact shape and the review/regression workers.
 
 Use:
 
+- Prompt 10: Dashboard Replay Artifact Compiler
 - Prompt 06: Review and Regression Proof
 - Prompt 07: Regression Test Writer
 
 That means:
 
+- the replay UI should be driven by structured phase artifacts, not ad hoc UI-only data
 - review outputs should follow the findings-first contract from that file
 - regression-proof outputs should follow the narrow incident-specific proof contract from that file
 
 ## Phase 9 Prompt: Build Skill Writer And Postmortem
 
 ```text
-Implement the final ReplayX artifact phases.
+Implement the demo script, judge-start-here flow, and artifact-writing phases.
 
 Goal:
 Generate:
+- a precise 2-minute demo script
+- a judge-start-here path in the repo
 - reusable skill artifact
 - concise postmortem
 
 Requirements:
+- write the exact video flow around one golden incident
+- structure the video around:
+  1. problem
+  2. broken app
+  3. incident input
+  4. worker fan-out
+  5. fix + proof
+  6. transformed state
+- make the README legible to someone who is completely unaware of ReplayX
+- add a short “why Codex matters” explanation without sounding generic
 - write skills under skills/
 - use a simple YAML or JSON schema
 - keep the schema precise enough for future fast-path matching
@@ -566,10 +629,14 @@ Requirements:
 - use only validated upstream artifacts, not guessed narratives
 
 Verification:
+- the repo contains a script or markdown artifact for the exact 2-minute flow
+- the README has a clear judge-facing start path
 - skill artifact is created for a mocked successful run
 - postmortem output is generated from structured run data
 
 Done when:
+- the demo can be narrated cleanly from repo artifacts
+- the README is understandable in under 30 seconds
 - a reusable skill artifact lands on disk
 - a concise postmortem lands on disk
 - both are derived from the actual run outputs
@@ -577,22 +644,24 @@ Done when:
 
 ### Phase 9 Operator Note
 
-At Phase 9, use `Docs/replayx-codex-first-prompts.md` as the internal prompt spec for artifact-writing workers.
+At Phase 9, use `Docs/replayx-codex-first-prompts.md` as the internal prompt spec for artifact-writing and demo-script workers.
 
 Use:
 
+- Prompt 12: Demo Script Writer
 - Prompt 08: Postmortem Writer
 - Prompt 09: Skill Writer
 
 That means:
 
+- the demo script should come from a real artifact-backed prompt, not a loose narrative pass
 - the postmortem should follow the fact-vs-inference discipline from that file
 - the skill artifact should follow the reuse-oriented precision from that file
 
 ## Phase 10 Prompt: Wire End-To-End Orchestrator
 
 ```text
-Wire the ReplayX orchestrator end to end.
+Wire the end-to-end golden-path orchestrator for the demo.
 
 Goal:
 Make orchestrator/main.ts run the full hackathon path:
@@ -614,6 +683,7 @@ Requirements:
 - avoid hidden magic
 - preserve phase artifacts for replay and judging
 - keep the main path deterministic for the seeded incidents
+- ensure the golden-path run can feed the dashboard replay and demo script directly
 
 Verification:
 - one seeded incident can run through the full path
@@ -639,10 +709,10 @@ That means the end-to-end pipeline should route work according to the prompt pac
 ## Phase 11 Prompt: Build Hackathon Dashboard
 
 ```text
-Build the smallest useful ReplayX dashboard for the hackathon demo.
+Build the polished hackathon dashboard and replay experience.
 
 Goal:
-Create a UI that makes the ReplayX pipeline understandable in under 30 seconds.
+Turn the functional replay UI into the main judge-facing ReplayX product surface.
 
 It should show:
 - incident summary
@@ -652,14 +722,19 @@ It should show:
 - winning fix
 - generated skill
 - postmortem summary
+- clear timeline / stage progression
+- before/after state framing for the golden incident
 
 Requirements:
 - keep it simple and visually clear
-- do not spend time on unnecessary polish if the backend path is not done
+- optimize for cold-viewer comprehension first, aesthetics second
 - if live streaming is too expensive, use replayable structured run artifacts
+- make the dashboard feel like ReplayX, not like a generic admin panel
+- prefer a single polished golden flow over many shallow screens
 
 Verification:
 - dashboard can render a completed run artifact
+- the UI can carry the 2-minute demo video visually without heavy narration
 ```
 
 ### Phase 11 Operator Note
@@ -705,7 +780,7 @@ This phase should stay aligned to the worker outputs and artifacts defined by th
 ## Phase 12 Prompt: Build Demo Script And Judging Flow
 
 ```text
-Create the ReplayX hackathon demo flow.
+Create the final hackathon demo package.
 
 Goal:
 Package the project so the demo is reliable and easy to narrate.
@@ -716,6 +791,8 @@ Deliver:
 - fallback plan if live inference fails
 - 60-second explanation of the architecture
 - 30-second explanation of why Codex-first is the correct choice
+- a clean visual recording order
+- explicit narration tied to the actual dashboard states
 
 Also:
 - add a concise demo section to README.md
@@ -725,6 +802,7 @@ Verification:
 - commands are coherent
 - fallback path exists
 - the story is crisp
+- the visual sequence matches the implemented surfaces
 ```
 
 ### Phase 12 Operator Note
