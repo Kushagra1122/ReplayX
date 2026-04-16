@@ -11,6 +11,7 @@ yarn-error.log*
 
 # Dependencies
 node_modules/
+.pnpm-store/
 
 # Build output
 dist/
@@ -41,3 +42,4 @@ coverage/
 tmp/
 temp/
 *.tmp
+artifacts/

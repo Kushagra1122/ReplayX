@@ -4,7 +4,7 @@
 
 Approved direction for the next ReplayX architecture revision.
 
-This document replaces the old OpenAI Agents SDK direction stored under `Docs/Docs- agent-sdk/`.
+This document replaces the older ReplayX plans that were centered on the OpenAI Agents SDK.
 
 ## Executive Decision
 
@@ -448,7 +448,7 @@ Do not start with:
 
 - a generalized multi-agent framework
 - handoff abstractions
-- tool registries copied from Agents SDK patterns
+- tool registries copied from old agent-framework patterns
 - tracing UX before the core fix loop works
 
 Build the winning path first.
