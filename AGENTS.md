@@ -1,121 +1,87 @@
-# ReplayX — AGENTS.md (Codex-First Version)
+# ReplayX — AGENTS.md
 
-## Codex operating instructions for this repository
+## What This Repo Is
 
-Codex reads `AGENTS.md` before doing work, and merges instruction files from global scope to project scope to more specific nested scope, with deeper files overriding broader ones.
+ReplayX is a Codex-first incident response project for the Codex hackathon.
 
----
+The target product turns an incident bundle into:
 
-## What ReplayX is
-
-**ReplayX** is a Codex-first incident response system. It takes an incident bundle - logs, stacktrace, metrics, recent code context - and turns it into:
-
-- a ranked root-cause diagnosis
-- a validated fix proposal
+- a ranked diagnosis
+- a validated fix
 - a reviewed patch
+- a regression proof
 - a postmortem
-- and a reusable incident skill
+- a reusable incident skill
 
-The system is intentionally **Codex-native**. Use **Codex SDK** for orchestration and thread control, and use **Codex CLI** for local iteration, scripted repo tasks, and code review workflows.
+## Current Repo State
 
----
+This repository is currently documentation-first.
 
-## Core stack
+The canonical files right now are:
 
-- **Orchestration:** `@openai/codex-sdk` in Node.js 18+
-- **Interactive development:** Codex CLI (`npm i -g @openai/codex`)
-- **Frontend:** React + Vite
-- **Demo app:** Node.js + Express + PostgreSQL
-- **Load tests:** k6
-- **Source control / PRs:** git + GitHub CLI
+- `AGENTS.md`
+- `README.md`
+- `PIPELINE.md`
+- `PROMPTS.md`
+- `Docs/replayx-codex-first-architecture.md`
+- `Docs/replayx-codex-first-prompts.md`
+- `Docs/replayx-build-with-codex-usage-prompts.md`
 
----
+Do not assume the future implementation files already exist.
 
-## Repo expectations
+## Architecture Rule
 
-- Keep the architecture **Codex-first**. Do not introduce OpenAI Agents SDK as the primary runtime.
-- Prefer Codex SDK threads for diagnosis, validation, fixing, and review phases.
-- Use Codex CLI for prompt iteration, local repo review, and scripted `codex exec` automation where helpful.
-- Keep durable repo rules in this file instead of repeating them in every prompt.
-- Keep this file concise; long prompt catalogs belong in `PROMPTS.md` and flow docs belong in `PIPELINE.md`, because Codex instruction discovery has a size cap by default.
+- ReplayX must be Codex-first.
+- Use `@openai/codex-sdk` as the primary orchestration runtime.
+- Use Codex CLI for `codex exec`, local automation, and repeatable operator workflows.
+- Do not use OpenAI Agents SDK as the core runtime.
+- If a future hosted path is needed, prefer the Responses API with ReplayX-owned orchestration rather than switching the whole architecture to Agents SDK.
 
----
+## Build Priority
 
-## Key directories
+Optimize for a winning hackathon demo, not framework breadth.
 
-```text
-replay-x/
-├── AGENTS.md
-├── README.md
-├── PIPELINE.md
-├── PROMPTS.md
-├── DECISION_CODEX_FIRST.md
-├── orchestrator/
-│   ├── main.ts
-│   ├── diagnosis_arena.ts
-│   ├── adversary.ts
-│   ├── fix_arena.ts
-│   ├── review_pass.ts
-│   └── skill_writer.ts
-├── demo_app/
-├── incidents/
-├── skills/
-└── dashboard/
-```
+That means:
 
----
+- one clear end-to-end incident flow
+- strong seeded incidents
+- bounded diagnosis workers
+- bounded fix workers
+- visible verification and artifacts
+- a simple dashboard or replay mode that judges can understand quickly
 
-## Run commands
+## Prompting Rules
 
-```bash
-# Install repo deps
-npm install
+- Keep stable operating rules in `AGENTS.md` and `PROMPTS.md`.
+- Keep the full worker prompt pack in `Docs/replayx-codex-first-prompts.md`.
+- Keep build/operator prompts in `Docs/replayx-build-with-codex-usage-prompts.md`.
+- Put dynamic incident detail in the user layer, not the system layer.
+- Prefer explicit output schemas and verification commands.
+- Keep prompts short, operational, and machine-checkable.
 
-# Install Codex CLI globally
-npm i -g @openai/codex
+## Working Rules
 
-# Run ReplayX orchestrator
-npm run dev
+- Read the relevant repo files before editing.
+- Keep changes hackathon-scoped.
+- Do not reintroduce old agent-framework abstractions.
+- Run the narrowest useful verification after each batch.
+- Keep docs aligned with the actual state of the repo.
+- If Prompt 00 changes, keep `PROMPTS.md` and `Docs/replayx-codex-first-prompts.md` aligned.
 
-# Run dashboard
-cd dashboard && npm run dev
+## Done Means
 
-# Run tests
-npm test
+A task is complete only when:
 
-# Run load tests
-k6 run k6/incident_checkout.js
-```
+1. the requested docs or code exist
+2. the relevant prompts or architecture are internally consistent
+3. verification was run when possible, or the limitation is stated clearly
+4. no stale Agents-SDK-based guidance remains as the recommended path
 
----
-
-## Done means
-
-A task is only complete when all of these are true:
-
-1. The requested code or prompt change is implemented.
-2. Relevant tests pass or the failure is explained clearly.
-3. If behavior changed, the diff has been reviewed.
-4. If a workflow became repeatable, consider whether it should become a skill.
-5. Do not claim success without verification.
-
----
-
-## Working style for Codex
-
-For complex tasks:
-
-- plan first
-- identify goal, context, constraints, and done-when
-- work one coherent thread per unit of work when possible
-- use subagents only for bounded parallel subtasks
-- review before finalizing
-
----
-
-## Useful references
+## Source Links
 
 - Codex SDK: https://developers.openai.com/codex/sdk
 - Codex CLI: https://developers.openai.com/codex/cli
 - AGENTS.md guide: https://developers.openai.com/codex/guides/agents-md
 - Codex best practices: https://developers.openai.com/codex/learn/best-practices
+- Prompt engineering guide: https://developers.openai.com/api/docs/guides/prompt-engineering
+- Prompt caching guide: https://developers.openai.com/api/docs/guides/prompt-caching

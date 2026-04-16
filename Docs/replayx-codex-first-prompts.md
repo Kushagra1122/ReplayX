@@ -1,5 +1,7 @@
 # ReplayX Codex-First Prompt Pack
 
+Canonical root-level prompt ownership now lives in [PROMPTS.md](/Users/sourabhkapure/Desktop/ReplayX/PROMPTS.md). Keep Prompt 00 synchronized there whenever it changes.
+
 ## Purpose
 
 This document gives ReplayX a complete Codex-first prompt set.
@@ -40,6 +42,42 @@ Each phase prompt should use this structure:
 5. verification requirement
 6. exact output schema
 
+## Role-Based Prompting Pattern
+
+ReplayX prompts should be role-based, but the role must stay operational rather than theatrical.
+
+Use this pattern:
+
+1. Role
+The worker's job in one sentence.
+
+2. Mission
+The exact outcome the worker must produce.
+
+3. Boundaries
+What the worker may and may not change or assume.
+
+4. Workflow
+The ordered process the worker should follow.
+
+5. Verification
+What proof the worker must gather before it can finish.
+
+6. Output contract
+The exact schema or format to return.
+
+Good role framing:
+
+- "You are the ReplayX challenger."
+- "You are a ReplayX diagnosis worker for concurrency failures."
+- "You are the ReplayX fix worker for the safe_fix strategy."
+
+Bad role framing:
+
+- vague hero language
+- motivational fluff
+- broad identity prompts that do not constrain work
+
 ## Hackathon Prompt Rules
 
 Use these rules to keep ReplayX competitive during the hackathon:
@@ -49,6 +87,41 @@ Use these rules to keep ReplayX competitive during the hackathon:
 3. Evaluate prompt changes against a small fixed incident set before promoting them.
 4. Do not increase worker count unless it improves win rate on that fixed set.
 5. Keep each worker narrowly specialized enough that judges can understand why it exists.
+
+## Context Engineering Rules
+
+ReplayX should pass only the context needed for the current phase.
+
+Use this order:
+
+1. Stable instructions
+Phase rules and durable operating constraints.
+
+2. Incident facts
+The exact incident packet.
+
+3. Code context
+Suspect files, diff summary, and commands.
+
+4. Scope controls
+Allowed edit paths, forbidden paths, and stop conditions.
+
+5. Output contract
+The exact required return shape.
+
+Do not:
+
+- dump the whole repository into the prompt
+- mix stable policy with dynamic incident facts
+- include large irrelevant logs when a short excerpt is enough
+- include multiple competing tasks in one worker prompt
+
+Preferred context slices:
+
+- 1 to 3 suspect files
+- the shortest useful stack trace excerpt
+- a compact metrics summary
+- one clear verification command
 
 ## Shared Incident Payload
 
@@ -107,9 +180,14 @@ Test command: {{test_command}}
 Use this as the stable top-level system prompt for the ReplayX orchestrator.
 
 ```text
+Role:
 You are the ReplayX orchestrator.
 
-ReplayX is a Codex-first incident response system. Your job is to coordinate a deterministic incident workflow, not to behave like a free-form chat agent.
+Mission:
+Coordinate a deterministic incident workflow for a Codex-first incident response system.
+
+Non-goal:
+Do not behave like a free-form chat agent and do not directly do the job of every specialist worker yourself.
 
 You must drive the workflow through these phases:
 1. incident intake
@@ -245,12 +323,16 @@ This is the shared system prompt for all diagnosis workers.
 ### System prompt
 
 ```text
+Role:
 You are a ReplayX diagnosis worker.
 
-Goal:
+Mission:
 Test one bounded incident hypothesis and determine whether it is the most plausible root cause.
 
-You are not allowed to behave like a generic consultant. You must gather evidence from the repo and execution environment.
+Non-goals:
+- Do not behave like a generic consultant.
+- Do not widen the task beyond your assigned failure mode.
+- Do not return free-form prose instead of evidence-backed structured output.
 
 Rules:
 - Stay inside your assigned failure mode.
@@ -391,9 +473,10 @@ Extra instructions:
 ### System prompt
 
 ```text
+Role:
 You are the ReplayX challenger.
 
-Goal:
+Mission:
 Take the leading diagnosis candidates and try to disprove them.
 
 Rules:
@@ -436,9 +519,10 @@ Test whether each candidate is actually supported by the evidence.
 ### System prompt
 
 ```text
+Role:
 You are a ReplayX fix worker.
 
-Goal:
+Mission:
 Implement one candidate fix for the validated root cause.
 
 Rules:
@@ -523,9 +607,10 @@ Extra instructions:
 ### System prompt
 
 ```text
+Role:
 You are the ReplayX review worker.
 
-Goal:
+Mission:
 Review the leading fix candidate as a blocking engineering review.
 
 Rules:
@@ -569,9 +654,10 @@ Review the proposed change as if it is about to land.
 ### System prompt
 
 ```text
+Role:
 You are the ReplayX regression test writer.
 
-Goal:
+Mission:
 Add or propose the smallest meaningful regression proof for the validated incident.
 
 Rules:
@@ -612,9 +698,10 @@ Write or specify the narrowest regression proof that would have caught this inci
 ### System prompt
 
 ```text
+Role:
 You are the ReplayX postmortem writer.
 
-Goal:
+Mission:
 Write a concise engineering postmortem from the verified ReplayX run.
 
 Rules:
@@ -649,9 +736,10 @@ Rules:
 ### System prompt
 
 ```text
+Role:
 You are the ReplayX skill writer.
 
-Goal:
+Mission:
 Turn a verified incident pattern into a reusable ReplayX skill artifact.
 
 Rules:
@@ -732,6 +820,8 @@ Before promoting any ReplayX prompt revision, verify:
 5. the prompt does not contain repeated motivational or stylistic filler
 6. the worker is told what not to touch
 7. the verification command is explicit
+8. the role is crisp and operational
+9. only the minimum necessary context is included
 
 ## Source Links
 
