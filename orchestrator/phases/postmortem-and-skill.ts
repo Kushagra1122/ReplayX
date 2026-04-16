@@ -133,7 +133,7 @@ export const buildDashboardReplayArtifact = (
       after: reviewResult.regression_proof.demo_summary
     },
     demo_summary:
-      "ReplayX ingests the incident, shows bounded Codex worker fan-out, picks a fix, proves it, and emits reusable incident knowledge."
+      "ReplayX ingests the incident, shows bounded worker fan-out, ranks a fix proposal, outlines verification, and emits reusable incident knowledge."
   };
 };
 
@@ -186,14 +186,14 @@ export const buildDemoScriptArtifact = (
       timestamp: "01:05-01:30",
       screen: "Fix and proof cards",
       narration:
-        "ReplayX selects the safest winning fix and shows the proof needed to trust it, not just a claim.",
+        "ReplayX selects the safest winning fix proposal and shows the verification plan needed to trust it, not just a claim.",
       proof_point: replayArtifact.fix_card.summary
     },
     {
       timestamp: "01:30-01:50",
       screen: "Before/after and artifact cards",
       narration:
-        "The bug is resolved in the golden path, and ReplayX emits a postmortem and a reusable skill for the next incident.",
+        "ReplayX packages the run into a postmortem and a reusable skill so the next incident starts with more context.",
       proof_point: replayArtifact.before_after.after
     },
     {
@@ -212,7 +212,7 @@ const buildPostmortemMarkdown = (
   challengerResult: ReplayXChallengerValidationPhaseOutput,
   fixResult: ReplayXFixArenaPhaseOutput,
   reviewResult: ReplayXReviewAndRegressionPhaseOutput
-): string => `# ReplayX Postmortem\n\n## Summary\n${incident.summary.symptom}\n\n## Root Cause\n${challengerResult.winning_reason}\n\n## Fix\n${fixResult.winner_summary}\n\n## Proof\n${reviewResult.regression_proof.demo_summary}\n\n## Residual Risk\n${reviewResult.residual_risk}\n`;
+): string => `# ReplayX Postmortem\n\n## Summary\n${incident.summary.symptom}\n\n## Root Cause\n${challengerResult.winning_reason}\n\n## Proposed Fix\n${fixResult.winner_summary}\n\n## Verification Plan\n${reviewResult.regression_proof.demo_summary}\n\n## Residual Risk\n${reviewResult.residual_risk}\n`;
 
 const buildSkillYaml = (
   incident: NormalizedIncident,
@@ -231,11 +231,13 @@ export const runPostmortemAndSkillPhase = async (
   const incidentArtifactDirectory = path.join(runtime.artifactsRoot, incident.incidentId);
   const postmortemPath = path.join(incidentArtifactDirectory, "postmortem.md");
   const skillPath = path.join(incidentArtifactDirectory, "skill.yaml");
+  const canonicalSkillPath = path.join(runtime.repoRoot, "skills", `${incident.incidentId}.yaml`);
   const replayArtifactPath = path.join(incidentArtifactDirectory, "dashboard-replay.json");
   const slackArtifactPath = path.join(incidentArtifactDirectory, "slack-intake.json");
   const demoScriptPath = path.join(incidentArtifactDirectory, "demo-script.json");
 
   await mkdir(incidentArtifactDirectory, { recursive: true });
+  await mkdir(path.join(runtime.repoRoot, "skills"), { recursive: true });
 
   const postmortemMarkdown = buildPostmortemMarkdown(
     incident,
@@ -245,7 +247,7 @@ export const runPostmortemAndSkillPhase = async (
   );
   const skillYaml = buildSkillYaml(incident, challengerResult, fixResult);
   const postmortemSummary = challengerResult.winning_reason;
-  const skillSummary = `ReplayX can fast-path ${incident.incidentClass} using ${fixResult.winner ?? "the selected fix strategy"}.`;
+  const skillSummary = `ReplayX can fast-path ${incident.incidentClass} using ${fixResult.winner ?? "the selected fix strategy"} once a real patch loop validates it.`;
   const replayArtifact = buildDashboardReplayArtifact(
     incident,
     diagnosisResult,
@@ -263,6 +265,7 @@ export const runPostmortemAndSkillPhase = async (
   await Promise.all([
     writeFile(postmortemPath, postmortemMarkdown, "utf8"),
     writeFile(skillPath, skillYaml, "utf8"),
+    writeFile(canonicalSkillPath, skillYaml, "utf8"),
     writeFile(replayArtifactPath, `${JSON.stringify(replayArtifact, null, 2)}\n`, "utf8"),
     writeFile(slackArtifactPath, `${JSON.stringify(slackArtifact, null, 2)}\n`, "utf8"),
     writeFile(demoScriptPath, `${JSON.stringify(demoScriptArtifact, null, 2)}\n`, "utf8")

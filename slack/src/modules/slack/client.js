@@ -32,7 +32,16 @@ class SlackClient {
       body: JSON.stringify(payload),
     });
 
-    const result = await response.json();
+    let result;
+
+    try {
+      result = await response.json();
+    } catch (error) {
+      throw new SlackApiError("Slack chat.postMessage returned a non-JSON response", {
+        status: response.status,
+        parseError: error instanceof Error ? error.message : "Unknown JSON parse error",
+      });
+    }
 
     if (!response.ok || !result.ok) {
       throw new SlackApiError("Slack chat.postMessage failed", {

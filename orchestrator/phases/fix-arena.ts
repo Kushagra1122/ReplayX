@@ -60,39 +60,40 @@ const selectFixStrategyOutputs = (
           strategy: "minimal_fix",
           status: "completed",
           summary:
-            "Revalidate inventory after the async gap and short-circuit when the live available count changed before decrement.",
+            "Propose revalidating inventory after the async gap and short-circuiting when the live available count changed before decrement.",
           files_changed: ["demo_app/src/inventory/reserve-stock.ts"],
           verification_command: verificationCommand,
-          verification_result: "Sequential checkout stays green and concurrent oversell path is blocked.",
+          verification_result:
+            "Verification plan: apply the candidate patch, then confirm the concurrent oversell path is blocked while the serial control still stays green.",
           blast_radius: "low",
           rollback_note: "Revert reserve-stock live revalidation logic.",
           risk_note: "Prevents the seeded race but still leaves the flow dependent on in-memory ordering.",
           score: 0.79,
-          demo_summary: "Smallest patch, lowest blast radius."
+          demo_summary: "Smallest proposed patch with the lowest blast radius."
         },
         {
           strategy: "safe_fix",
           status: "completed",
           summary:
-            "Move reservation to a single live inventory guard with explicit stale-state rejection before checkout worker commit.",
+            "Propose moving reservation to a single live inventory guard with explicit stale-state rejection before checkout worker commit.",
           files_changed: [
             "demo_app/src/inventory/reserve-stock.ts",
             "demo_app/src/queue/checkout-worker.ts"
           ],
           verification_command: verificationCommand,
           verification_result:
-            "Golden checkout incident no longer oversells; the healthy serial control still passes.",
+            "Verification plan: apply this candidate to checkout/inventory modules, rerun the concurrent checkout scenario, and confirm the serial control still passes.",
           blast_radius: "low",
           rollback_note: "Revert reservation guard and worker stale-state checks.",
           risk_note: "Best demo option, but still a bounded in-memory fix rather than a production-grade transaction boundary.",
           score: 0.94,
-          demo_summary: "Best balance of safety, clarity, and proof."
+          demo_summary: "Best balance of safety and clarity among the proposed fixes."
         },
         {
           strategy: "durable_fix",
           status: "completed",
           summary:
-            "Restructure checkout so reservation and commit operate on one deterministic inventory state contract with explicit worker handoff validation.",
+            "Propose restructuring checkout so reservation and commit operate on one deterministic inventory state contract with explicit worker handoff validation.",
           files_changed: [
             "demo_app/src/checkout/submit-order.ts",
             "demo_app/src/inventory/reserve-stock.ts",
@@ -100,12 +101,12 @@ const selectFixStrategyOutputs = (
           ],
           verification_command: verificationCommand,
           verification_result:
-            "Addresses the race path comprehensively, but changes more surfaces than needed for the golden demo.",
+            "Verification plan: apply the broader state-contract change and rerun both the concurrent and serial checkout paths before accepting it.",
           blast_radius: "medium",
           rollback_note: "Revert the coordinated checkout/inventory flow changes.",
           risk_note: "Clearer long-term shape, but higher change surface than the safe fix.",
           score: 0.86,
-          demo_summary: "Most durable, but broader than needed for the demo."
+          demo_summary: "Most durable proposal, but broader than needed for the demo."
         }
       ];
     case "auth-token-session-failure":
@@ -114,38 +115,40 @@ const selectFixStrategyOutputs = (
           strategy: "minimal_fix",
           status: "completed",
           summary:
-            "Rotate a new token in the idle-session branch instead of returning the cached expired access token.",
+            "Propose rotating a new token in the idle-session branch instead of returning the cached expired access token.",
           files_changed: ["demo_app/src/auth/refresh-session.ts"],
           verification_command: verificationCommand,
-          verification_result: "Idle refresh no longer reuses the stale token and the recent-session control still passes.",
+          verification_result:
+            "Verification plan: apply the idle-session token rotation, then rerun the idle and recent-session auth scenarios.",
           blast_radius: "low",
           rollback_note: "Restore the old idle-session branch.",
           risk_note: "Fixes the bug directly but does not add stronger state-handoff visibility.",
           score: 0.91,
-          demo_summary: "Fastest clear fix for the seeded auth incident."
+          demo_summary: "Fastest clear proposal for the seeded auth incident."
         },
         {
           strategy: "safe_fix",
           status: "completed",
           summary:
-            "Rotate a fresh token and add an explicit stale-token guard before downstream validation.",
+            "Propose rotating a fresh token and adding an explicit stale-token guard before downstream validation.",
           files_changed: [
             "demo_app/src/auth/refresh-session.ts",
             "demo_app/src/middleware/require-session.ts"
           ],
           verification_command: verificationCommand,
-          verification_result: "Idle-session refresh now passes and stale tokens are rejected before reuse.",
+          verification_result:
+            "Verification plan: apply the refresh and stale-token guard changes, then rerun idle and fresh-session auth checks.",
           blast_radius: "low",
           rollback_note: "Revert the idle refresh and stale-token guard changes.",
           risk_note: "Best demo-safe path with better proof than the minimal fix.",
           score: 0.95,
-          demo_summary: "Best combination of clear fix and explicit proof."
+          demo_summary: "Best combination of clear fix scope and explicit verification plan."
         },
         {
           strategy: "durable_fix",
           status: "completed",
           summary:
-            "Refactor session refresh and token-store ownership so all downstream checks consume freshly rotated auth state.",
+            "Propose refactoring session refresh and token-store ownership so all downstream checks consume freshly rotated auth state.",
           files_changed: [
             "demo_app/src/auth/refresh-session.ts",
             "demo_app/src/auth/token-store.ts",
@@ -153,12 +156,12 @@ const selectFixStrategyOutputs = (
           ],
           verification_command: verificationCommand,
           verification_result:
-            "Stronger long-term auth-state shape, but broader than necessary for the demo path.",
+            "Verification plan: apply the broader auth-state refactor and rerun idle-session plus fresh-session auth checks.",
           blast_radius: "medium",
           rollback_note: "Revert the coordinated auth-state refactor.",
           risk_note: "Broader changes increase explanation cost during the demo.",
           score: 0.83,
-          demo_summary: "Most comprehensive auth fix, but broader than needed."
+          demo_summary: "Most comprehensive auth proposal, but broader than needed."
         }
       ];
     case "null-data-shape-failure":
@@ -166,39 +169,40 @@ const selectFixStrategyOutputs = (
         {
           strategy: "minimal_fix",
           status: "completed",
-          summary: "Guard `quote.taxes` with a null-safe default before calling reduce.",
+          summary: "Propose guarding `quote.taxes` with a null-safe default before calling reduce.",
           files_changed: ["demo_app/src/orders/build-summary.ts"],
           verification_command: verificationCommand,
-          verification_result: "Missing-taxes fixture no longer throws and the complete quote still renders.",
+          verification_result:
+            "Verification plan: apply the null-safe summary change, then rerun the missing-taxes and complete-quote fixtures.",
           blast_radius: "low",
           rollback_note: "Restore direct reduce call on quote.taxes.",
           risk_note: "Fastest fix, but leaves normalization responsibility scattered.",
           score: 0.9,
-          demo_summary: "One-line null-safe fix with clear before/after proof."
+          demo_summary: "One-line null-safe proposal with a clear verification plan."
         },
         {
           strategy: "safe_fix",
           status: "completed",
           summary:
-            "Normalize optional tax fields in the quote adapter and keep build-summary null-safe.",
+            "Propose normalizing optional tax fields in the quote adapter and keeping build-summary null-safe.",
           files_changed: [
             "demo_app/src/orders/quote-adapter.ts",
             "demo_app/src/orders/build-summary.ts"
           ],
           verification_command: verificationCommand,
           verification_result:
-            "Null taxes are normalized before rendering and the healthy fixture preserves the same total.",
+            "Verification plan: apply quote normalization plus null-safe rendering, then rerun missing and healthy quote fixtures.",
           blast_radius: "low",
           rollback_note: "Revert quote normalization and null-safe summary handling.",
           risk_note: "Best demo-safe fix because it shows both local safety and upstream normalization.",
           score: 0.96,
-          demo_summary: "Best mix of clear fix and robust shape handling."
+          demo_summary: "Best mix of clear fix scope and robust shape handling."
         },
         {
           strategy: "durable_fix",
           status: "completed",
           summary:
-            "Introduce a stricter quote-shape contract between adapter and renderer so optional fields are normalized before UI logic.",
+            "Propose a stricter quote-shape contract between adapter and renderer so optional fields are normalized before UI logic.",
           files_changed: [
             "demo_app/src/orders/quote-adapter.ts",
             "demo_app/src/orders/build-summary.ts",
@@ -206,12 +210,12 @@ const selectFixStrategyOutputs = (
           ],
           verification_command: verificationCommand,
           verification_result:
-            "Improves the whole data-shape path, but changes more files than needed for the demo.",
+            "Verification plan: apply the broader quote-shape contract and rerun both summary fixtures before accepting it.",
           blast_radius: "medium",
           rollback_note: "Revert the quote-shape contract changes.",
           risk_note: "Good long-term direction, but slightly heavier than the safest demo path.",
           score: 0.84,
-          demo_summary: "Most durable shape contract, but broader than necessary."
+          demo_summary: "Most durable shape contract proposal, but broader than necessary."
         }
       ];
   }

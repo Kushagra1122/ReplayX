@@ -191,6 +191,28 @@ export interface ReplayXIncidentPointer {
   normalizedPath: string;
 }
 
+export interface ReplayXIncidentIntakePhaseOutput {
+  schemaVersion: 1;
+  phase: "incident-intake";
+  incidentId: string;
+  input_path: string;
+  normalized_path: string;
+  source_kind: "normalized_fixture";
+  verification_status: "normalized";
+}
+
+export interface ReplayXSkillMatchPhaseOutput {
+  schemaVersion: 1;
+  phase: "skill-match";
+  incidentId: string;
+  matched: boolean;
+  match_confidence: number;
+  matched_skill_path: string | null;
+  matched_skill_id: string | null;
+  decision: "continue_to_repro" | "fast_path_available";
+  rationale: string;
+}
+
 export interface ReplayXRuntimeConfig {
   repoRoot: string;
   artifactsRoot: string;
@@ -409,7 +431,7 @@ export interface ReplayXReviewAndRegressionPhaseOutput {
   schemaVersion: 1;
   phase: "review-and-regression";
   incidentId: string;
-  review_verdict: "pass" | "fail";
+  review_verdict: "verified" | "blocked" | "planned";
   findings: ReplayXReviewFinding[];
   residual_risk: string;
   regression_proof: ReplayXRegressionProof;

@@ -5,9 +5,9 @@ ReplayX is a Codex-first incident response system for the Codex hackathon.
 It is designed to turn an incident bundle into:
 
 - a ranked diagnosis
-- a validated fix
-- a reviewed patch
-- a regression proof
+- a proposed fix
+- a reviewed verification plan
+- a regression verification plan
 - a postmortem
 - a reusable incident skill
 
@@ -27,7 +27,7 @@ The golden hackathon flow is:
 2. report it through Slack
 3. hand off into ReplayX
 4. show diagnosis worker fan-out
-5. show the chosen fix and proof
+5. show the chosen fix proposal and verification plan
 6. end on postmortem / reusable incident knowledge
 
 For the 2-minute video, optimize for one strong incident and one clear transformation, not broad feature coverage.
@@ -45,9 +45,9 @@ For the 2-minute video, optimize for one strong incident and one clear transform
 
 This repository now contains the hackathon scaffold plus a replayable golden-path demo flow:
 
-- `orchestrator/`: TypeScript-first orchestration with implemented repro, diagnosis, challenger, fix, review, and artifact phases for the golden run
-- `incidents/`: reserved for seeded incident bundles
-- `skills/`: skill artifacts emitted from the golden run
+- `orchestrator/`: TypeScript-first orchestration with implemented incident intake, skill match, repro, diagnosis, challenger, fix proposal, review-plan, and artifact phases for the golden run
+- `incidents/`: seeded incident bundles used by the golden replay
+- `skills/`: canonical copies of reusable skill artifacts emitted from the golden run
 - `demo_app/`: the seeded broken target system ReplayX diagnoses and fixes
 - `dashboard/`: a Next.js replay-first judge-facing dashboard
 - `slack/`: the Slack intake and handoff service
@@ -59,11 +59,12 @@ The important boundary is:
 - the backend exists to generate and persist the golden run artifacts
 - the dashboard exists to turn those artifacts into the main ReplayX product surface
 - Slack exists as the intake trigger into the replay flow
+- later golden-path phases currently emit fix proposals and verification plans rather than applying real repository patches
 - replay reliability matters more than broad live orchestration during the demo
 
 ## Scaffold Layout
 
-- `orchestrator/main.ts`: Node entrypoint that can run repro, diagnosis, challenger, fix, review, and the golden artifact flow
+- `orchestrator/main.ts`: Node entrypoint that can run incident intake, skill match, repro, diagnosis, challenger, fix, review, and the golden artifact flow
 - `orchestrator/types.ts`: shared runtime and phase contracts
 - `orchestrator/phases/`: implemented golden-path backend phases
 - `package.json`: Node and TypeScript project definition with `@openai/codex-sdk` as the intended orchestration dependency
@@ -87,3 +88,19 @@ ReplayX should not use the OpenAI Agents SDK as the core runtime.
 5. Start the demo app with `pnpm demo-app`.
 6. Start the dashboard with `pnpm dashboard:dev`.
 7. Use Slack as the intake trigger and the dashboard as the main demo surface.
+
+## Demo Commands
+
+```bash
+# 1. Generate the golden replay artifacts
+pnpm golden-run incidents/checkout-race-condition.json
+
+# 2. Run the broken target app
+pnpm demo-app
+
+# 3. Run the ReplayX dashboard
+pnpm dashboard:dev
+
+# 4. Optional: run the Slack service
+npm start --prefix slack
+```

@@ -79,13 +79,14 @@ The repository is already through the early setup phases:
 The next important transition is this:
 
 - Codex SDK integration is now present in the repro and diagnosis phases
+- incident intake artifacting and fast-path skill matching are now wired into the golden run
 - challenger validation is implemented as a deterministic adversarial gate over the diagnosis shortlist
-- fix arena remains the next major worker phase to implement
+- fix proposals, review-plan artifacts, replay artifacts, demo script, and Slack handoff are now implemented for the golden incident
 
 So if you are checking whether ReplayX is "already integrated with Codex," the precise answer is:
 
 - architecturally yes
-- in code, ReplayX already runs Codex-backed repro and diagnosis workers, with deterministic challenger validation ready and fix still pending
+- in code, ReplayX already runs Codex-backed repro and diagnosis workers, emits a deterministic challenger verdict, and compiles the golden-path fix-proposal/verification-plan/demo artifacts
 
 ## Demo Strategy Rules
 
@@ -695,6 +696,21 @@ Done when:
 - the operator can narrate the flow from artifacts alone
 ```
 
+### Phase 10 Current State
+
+The golden-run orchestration path is now implemented for the seeded demo flow.
+
+What it already does:
+
+- runs repro
+- runs diagnosis
+- runs challenger
+- emits fix arena artifacts
+- emits review/regression artifacts
+- emits postmortem, skill, replay, Slack, and demo-script artifacts
+
+What remains after this phase is polish and submission hardening, not core orchestration invention.
+
 ### Phase 10 Operator Note
 
 At Phase 10, you should be wiring the orchestrator around the full internal prompt system.
@@ -737,6 +753,12 @@ Verification:
 - the UI can carry the 2-minute demo video visually without heavy narration
 ```
 
+### Phase 11 Current State
+
+The dashboard now exists as a Next.js replay-first UI for the golden incident.
+
+The remaining work in this phase is visual polish, state-transition polish, and optional replay/event refinements.
+
 ### Phase 11 Operator Note
 
 The dashboard does not need a new internal worker prompt, but it should reflect the output contracts defined in `Docs/replayx-codex-first-prompts.md`.
@@ -773,6 +795,12 @@ Verification:
 - dashboard can render a mocked saved event stream end to end
 ```
 
+### Phase 11.5 Current State
+
+The dashboard is replay-first from saved artifacts, which is the required stable path for the hackathon demo.
+
+Saved event-stream playback is still optional polish, not a blocker, because the replay artifact already provides the reliable demo mode.
+
 ### Phase 11.5 Operator Note
 
 This phase should stay aligned to the worker outputs and artifacts defined by the internal prompt pack, but it does not introduce a new worker prompt of its own.
@@ -805,6 +833,12 @@ Verification:
 - the visual sequence matches the implemented surfaces
 ```
 
+### Phase 12 Current State
+
+The golden incident demo script artifact already exists.
+
+The remaining work in this phase is recording discipline and any final wording polish in repo-facing docs.
+
 ### Phase 12 Operator Note
 
 This phase is presentation-oriented. It should reference the worker behavior defined by the internal prompt pack, but it does not create new internal worker prompts.
@@ -828,6 +862,10 @@ Use the strongest parts of the older hackathon plan for product storytelling, bu
 
 Do not mention OpenAI Agents SDK as the core runtime.
 ```
+
+### Phase 13 Current State
+
+README now frames the judge flow correctly, but submission-polish passes can still improve the final pitch, short product explanation, and repo copy before submission.
 
 ### Phase 13 Operator Note
 

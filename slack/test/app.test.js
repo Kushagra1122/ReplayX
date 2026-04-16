@@ -278,6 +278,7 @@ test("POST /api/slack/post-message posts to the default bugs channel", async () 
   const calls = [];
   const app = createApp({
     signingSecret,
+    internalApiToken: "internal-secret",
     bugsChannelId: "CBUGS123",
     now: fixedNow,
     slackService: {
@@ -291,6 +292,7 @@ test("POST /api/slack/post-message posts to the default bugs channel", async () 
 
   const response = await request(app)
     .post("/api/slack/post-message")
+    .set("Authorization", "Bearer internal-secret")
     .send({ text: "Investigating this now" });
 
   assert.equal(response.status, 200);
@@ -302,7 +304,26 @@ test("POST /api/slack/post-message posts to the default bugs channel", async () 
   assert.equal(response.body.ok, true);
 });
 
-test("POST /api/slack/post-message validates the text field", async () => {
+test("POST /api/slack/post-message rejects requests without the internal API token", async () => {
+  const app = createApp({
+    signingSecret,
+    internalApiToken: "internal-secret",
+    now: fixedNow,
+    slackService: {
+      handleAppMention: async () => ({}),
+      postMessage: async () => ({}),
+    },
+  });
+
+  const response = await request(app)
+    .post("/api/slack/post-message")
+    .send({ text: "Investigating this now" });
+
+  assert.equal(response.status, 401);
+  assert.deepEqual(response.body, { error: "Unauthorized" });
+});
+
+test("POST /api/slack/post-message is disabled until an internal API token is configured", async () => {
   const app = createApp({
     signingSecret,
     now: fixedNow,
@@ -314,6 +335,26 @@ test("POST /api/slack/post-message validates the text field", async () => {
 
   const response = await request(app)
     .post("/api/slack/post-message")
+    .send({ text: "Investigating this now" });
+
+  assert.equal(response.status, 503);
+  assert.deepEqual(response.body, { error: "Internal Slack API is disabled" });
+});
+
+test("POST /api/slack/post-message validates the text field", async () => {
+  const app = createApp({
+    signingSecret,
+    internalApiToken: "internal-secret",
+    now: fixedNow,
+    slackService: {
+      handleAppMention: async () => ({}),
+      postMessage: async () => ({}),
+    },
+  });
+
+  const response = await request(app)
+    .post("/api/slack/post-message")
+    .set("Authorization", "Bearer internal-secret")
     .send({ channel: "CBUGS123" });
 
   assert.equal(response.status, 400);

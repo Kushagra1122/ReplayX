@@ -13,6 +13,10 @@ import {
 } from "./phases/diagnosis-arena.js";
 import { runFixArenaPhase, writeFixArenaArtifacts } from "./phases/fix-arena.js";
 import {
+  runIncidentIntakePhase,
+  writeIncidentIntakeArtifacts
+} from "./phases/incident-intake.js";
+import {
   runPostmortemAndSkillPhase,
   writePostmortemAndSkillArtifacts
 } from "./phases/postmortem-and-skill.js";
@@ -21,19 +25,20 @@ import {
   runReviewAndRegressionPhase,
   writeReviewAndRegressionArtifacts
 } from "./phases/review-and-regression.js";
+import { runSkillMatchPhase, writeSkillMatchArtifacts } from "./phases/skill-match.js";
 import type { ReplayXIncidentPointer, ReplayXRunPlan, ReplayXRuntimeConfig } from "./types.js";
 
 const defaultRuntimeConfig = (repoRoot: string): ReplayXRuntimeConfig => ({
   repoRoot,
   artifactsRoot: path.join(repoRoot, "artifacts"),
-  defaultModel: "GPT-5-Codex",
+  defaultModel: process.env.REPLAYX_CODEX_MODEL ?? "gpt-5-codex",
   maxParallelWorkers: 4,
   codexReproWorkerEnabled: process.env.REPLAYX_USE_CODEX_REPRO_WORKER !== "0",
-  codexReproWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_REPRO_TIMEOUT_MS ?? "8000"),
+  codexReproWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_REPRO_TIMEOUT_MS ?? "30000"),
   codexDiagnosisWorkersEnabled: process.env.REPLAYX_USE_CODEX_DIAGNOSIS_WORKERS !== "0",
-  codexDiagnosisWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_DIAGNOSIS_TIMEOUT_MS ?? "10000"),
+  codexDiagnosisWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_DIAGNOSIS_TIMEOUT_MS ?? "45000"),
   codexFixWorkersEnabled: process.env.REPLAYX_USE_CODEX_FIX_WORKERS !== "0",
-  codexFixWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_FIX_TIMEOUT_MS ?? "12000")
+  codexFixWorkerTimeoutMs: Number(process.env.REPLAYX_CODEX_FIX_TIMEOUT_MS ?? "60000")
 });
 
 const deriveIncidentPointer = (repoRoot: string, incidentArg?: string): ReplayXIncidentPointer => {
@@ -65,7 +70,7 @@ const renderRunPlan = (plan: ReplayXRunPlan): string => {
   });
 
   return [
-    "ReplayX scaffold is in place.",
+    "ReplayX phase runner is ready.",
     `Incident input: ${plan.incident.inputPath}`,
     `Artifacts root: ${plan.runtime.artifactsRoot}`,
     `Default model: ${plan.runtime.defaultModel}`,
@@ -73,7 +78,8 @@ const renderRunPlan = (plan: ReplayXRunPlan): string => {
     "Planned phases:",
     ...phaseLines,
     "",
-    "TODO: replace the scaffold run-plan output with real Codex SDK orchestration as the phase modules land."
+    "Run a phase with: tsx orchestrator/main.ts --phase <phase-id> incidents/<incident>.json",
+    "Run the replay-safe demo flow with: tsx orchestrator/main.ts --phase golden-run incidents/<incident>.json"
   ].join("\n");
 };
 
@@ -110,6 +116,38 @@ const parseCliArguments = (
 
 export const main = async (): Promise<void> => {
   const { phase, incidentPath } = parseCliArguments(process.argv.slice(2));
+
+  if (phase === "incident-intake") {
+    if (!incidentPath) {
+      throw new Error("Phase 'incident-intake' requires a path to a normalized incident JSON file.");
+    }
+
+    const repoRoot = process.cwd();
+    const runtime = defaultRuntimeConfig(repoRoot);
+    const absoluteIncidentPath = path.resolve(repoRoot, incidentPath);
+    const incident = await loadNormalizedIncident(absoluteIncidentPath);
+    const normalizedPath = path.join(runtime.artifactsRoot, incident.incidentId, "normalized_incident.json");
+    const result = runIncidentIntakePhase(absoluteIncidentPath, normalizedPath, incident);
+    const artifacts = await writeIncidentIntakeArtifacts(runtime, incident, result);
+
+    console.log(JSON.stringify({ ...result, artifact_paths: artifacts }, null, 2));
+    return;
+  }
+
+  if (phase === "skill-match") {
+    if (!incidentPath) {
+      throw new Error("Phase 'skill-match' requires a path to a normalized incident JSON file.");
+    }
+
+    const repoRoot = process.cwd();
+    const runtime = defaultRuntimeConfig(repoRoot);
+    const incident = await loadNormalizedIncident(path.resolve(repoRoot, incidentPath));
+    const result = await runSkillMatchPhase(runtime, incident);
+    const artifacts = await writeSkillMatchArtifacts(runtime, incident, result);
+
+    console.log(JSON.stringify({ ...result, artifact_paths: artifacts }, null, 2));
+    return;
+  }
 
   if (phase === "repro") {
     if (!incidentPath) {
@@ -294,7 +332,13 @@ export const main = async (): Promise<void> => {
 
     const repoRoot = process.cwd();
     const runtime = defaultRuntimeConfig(repoRoot);
-    const incident = await loadNormalizedIncident(path.resolve(repoRoot, incidentPath));
+    const absoluteIncidentPath = path.resolve(repoRoot, incidentPath);
+    const incident = await loadNormalizedIncident(absoluteIncidentPath);
+    const normalizedPath = path.join(runtime.artifactsRoot, incident.incidentId, "normalized_incident.json");
+    const intakeResult = runIncidentIntakePhase(absoluteIncidentPath, normalizedPath, incident);
+    const intakeArtifacts = await writeIncidentIntakeArtifacts(runtime, incident, intakeResult);
+    const skillMatchResult = await runSkillMatchPhase(runtime, incident);
+    const skillMatchArtifacts = await writeSkillMatchArtifacts(runtime, incident, skillMatchResult);
     const reproResult = await runReproPhase(incident, runtime);
     const reproArtifacts = await writeReproArtifacts(runtime, incident, reproResult);
     const diagnosisResult = await runDiagnosisArenaPhase(incident, runtime, reproResult);
@@ -324,6 +368,8 @@ export const main = async (): Promise<void> => {
         {
           ...artifactResult,
           artifact_paths: {
+            incident_intake: intakeArtifacts,
+            skill_match: skillMatchArtifacts,
             repro: reproArtifacts,
             diagnosis: diagnosisArtifacts,
             challenger: challengerArtifacts,

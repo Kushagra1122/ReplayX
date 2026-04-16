@@ -19,7 +19,8 @@ Required environment variables in Render:
 Optional environment variables for the hackathon demo flow:
 
 - `REPLAYX_DASHBOARD_URL`: base URL for the ReplayX dashboard handoff, for example `https://replayx.app`
-- `REPLAYX_GOLDEN_INCIDENT_ID`: incident slug used for Slack intake handoff, defaults to `checkout-race-condition`
+- `REPLAYX_GOLDEN_INCIDENT_ID`: incident slug used for Slack intake handoff, defaults to `incident-checkout-race-001`
+- `REPLAYX_INTERNAL_API_TOKEN`: bearer token required for `POST /api/slack/post-message`; if unset, the internal posting endpoint is disabled
 
 ## Structure
 
@@ -43,4 +44,4 @@ For the hackathon demo, Slack is the intake trigger into ReplayX:
 
 1. A user reports a bug by mentioning ReplayX in the bugs channel.
 2. ReplayX acknowledges the report and returns a handoff target for the golden incident flow.
-3. The demo then moves into the ReplayX dashboard replay, where diagnosis, fix, proof, and artifacts are shown.
+3. The demo then moves into the ReplayX dashboard replay, where diagnosis, fix proposals, verification plans, and artifacts are shown.

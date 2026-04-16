@@ -10,6 +10,7 @@ function createSlackModule({
   bugsChannelId = process.env.SLACK_BUGS_CHANNEL_ID,
   dashboardBaseUrl = process.env.REPLAYX_DASHBOARD_URL,
   goldenIncidentId = process.env.REPLAYX_GOLDEN_INCIDENT_ID,
+  internalApiToken = process.env.REPLAYX_INTERNAL_API_TOKEN,
   slackService,
   slackClient,
   logger,
@@ -40,7 +41,7 @@ function createSlackModule({
       signingSecret,
       now,
     }),
-    apiRouter: createSlackApiRouter({ controller }),
+    apiRouter: createSlackApiRouter({ controller, internalApiToken }),
   };
 }
 

@@ -290,6 +290,19 @@ Generate:
 - reusable ReplayX skill
 - prompt artifacts if the incident class should become a reusable arena pattern
 
+## Demo Realization
+
+For the hackathon, the architecture is now realized as a replay-first golden path:
+
+- the backend produces deterministic phase artifacts
+- the dashboard renders those artifacts as the main ReplayX product surface
+- Slack acts as the intake and handoff trigger
+- incident intake and fast-path skill matching are part of the runnable golden path
+- later golden-path phases currently emit fix proposals and verification plans rather than applying real repository patches
+- the 2-minute demo is driven by one golden incident rather than broad live orchestration
+
+This is the correct tradeoff for the hackathon because it preserves the Codex-first architecture while maximizing demo reliability.
+
 ## Suggested Technical Shape
 
 ### Orchestrator

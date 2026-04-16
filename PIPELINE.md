@@ -24,8 +24,8 @@ Take the strongest diagnosis candidates and try to falsify them. Do not accept a
 6. Fix arena
 Run bounded fix workers in parallel, typically minimal, safest, and durable variants. Prefer correctness and low blast radius over larger refactors.
 
-7. Review and regression proof
-Review the winning patch, verify the incident is actually addressed, and veto the fix if regression risk is not justified.
+7. Review and regression verification plan
+Review the winning fix proposal, define the verification commands that must run after patch application, and veto the proposal if regression risk is not justified.
 
 8. Postmortem and skill writing
 Emit human-readable postmortem artifacts and a reusable ReplayX skill when the incident class should be captured for future runs.
@@ -61,4 +61,4 @@ Every phase should preserve artifacts on disk so the run is inspectable and repl
 
 ## Current implementation note
 
-The current repository contains an initial `orchestrator/` scaffold with TypeScript contracts and per-phase placeholders. Treat this document as the execution contract for filling those modules with real implementation.
+The current repository implements the replay-safe golden path end to end, including incident intake artifacting and fast-path skill matching. The later golden-path phases still emit deterministic fix proposals and verification plans rather than applying and validating real repository patches.

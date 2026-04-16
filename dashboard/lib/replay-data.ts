@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 export const GOLDEN_INCIDENT_ID = "incident-checkout-race-001";
 
@@ -269,31 +270,73 @@ export type ReplayBundle = {
   }>;
 };
 
-const rootDir = path.resolve(process.cwd(), "..");
-const artifactsDir = path.join(rootDir, "artifacts");
-const incidentsDir = path.join(rootDir, "incidents");
+class ReplayDataError extends Error {
+  code: "incident_not_found" | "artifact_invalid" | "artifact_missing";
 
-async function readJsonFile<T>(filePath: string): Promise<T | null> {
-  try {
-    const text = await fs.readFile(filePath, "utf8");
-    return JSON.parse(text) as T;
-  } catch {
-    return null;
+  constructor(code: ReplayDataError["code"], message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "ReplayDataError";
+    this.code = code;
   }
 }
 
-function incidentPathFromId(incidentId: string): string {
-  if (incidentId.includes("checkout")) {
-    return path.join(incidentsDir, "checkout-race-condition.json");
+const dashboardDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(dashboardDir, "..");
+const artifactsDir = path.join(repoRoot, "artifacts");
+const incidentsDir = path.join(repoRoot, "incidents");
+
+async function readRequiredJsonFile<T>(filePath: string): Promise<T> {
+  try {
+    const text = await fs.readFile(filePath, "utf8");
+    return JSON.parse(text) as T;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      throw new ReplayDataError("artifact_missing", `Required artifact is missing: ${filePath}`, {
+        cause: error
+      });
+    }
+
+    throw new ReplayDataError("artifact_invalid", `Artifact could not be read: ${filePath}`, {
+      cause: error
+    });
   }
-  if (incidentId.includes("auth")) {
-    return path.join(incidentsDir, "auth-token-session-failure.json");
+}
+
+async function readOptionalJsonFile<T>(filePath: string): Promise<T | null> {
+  try {
+    return await readRequiredJsonFile<T>(filePath);
+  } catch (error) {
+    if (error instanceof ReplayDataError && error.code === "artifact_missing") {
+      return null;
+    }
+
+    throw error;
   }
-  if (incidentId.includes("null-shape")) {
-    return path.join(incidentsDir, "null-data-shape-failure.json");
+}
+
+async function listIncidentFiles(): Promise<string[]> {
+  const entries = await fs.readdir(incidentsDir, { withFileTypes: true });
+
+  return entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+    .map((entry) => path.join(incidentsDir, entry.name))
+    .sort();
+}
+
+async function loadAllIncidents(): Promise<NormalizedIncident[]> {
+  const incidentFiles = await listIncidentFiles();
+  return Promise.all(incidentFiles.map((filePath) => readRequiredJsonFile<NormalizedIncident>(filePath)));
+}
+
+async function loadIncidentById(incidentId: string): Promise<NormalizedIncident> {
+  const incidents = await loadAllIncidents();
+  const incident = incidents.find((entry) => entry.incidentId === incidentId);
+
+  if (!incident) {
+    throw new ReplayDataError("incident_not_found", `Unknown incident: ${incidentId}`);
   }
 
-  return path.join(incidentsDir, `${incidentId}.json`);
+  return incident;
 }
 
 function workerLabel(workerId: string): string {
@@ -366,7 +409,7 @@ function summarizePostmortem(incident: NormalizedIncident) {
   return {
     title: "Postmortem artifact pending",
     summary:
-      "ReplayX will convert the verified run into a concise engineering postmortem once downstream artifacts are generated.",
+      "ReplayX will convert the replayed run into a concise engineering postmortem once downstream artifacts are generated.",
     points: [
       `Customer impact already captured: ${incident.summary.customerImpact}`,
       "Later phases will normalize root cause, fix choice, and guardrails into a reusable narrative.",
@@ -397,7 +440,7 @@ function buildBeforeAfter(incident: NormalizedIncident, repro: ReplayReproPhaseO
     beforeEvidence:
       failing?.stderr?.trim() ??
       `${incident.summary.symptom}\n\nNo failing stderr artifact found yet for this incident replay.`,
-    afterLabel: "After: the healthy path still works and the proof trail tightens",
+    afterLabel: "Next: the verification plan to run after applying the chosen patch",
     afterEvidence:
       healthy?.stdout?.trim() ??
       incident.acceptanceCriteria.map((criterion, index) => `${index + 1}. ${criterion}`).join("\n")
@@ -439,35 +482,26 @@ function buildTimeline(bundle: {
     {
       title: "Fix, proof, and reusable knowledge complete the loop",
       detail:
-        "Later-phase artifacts slot into this replay without changing the judge-facing story: chosen fix, regression proof, postmortem, and skill.",
+        "Later-phase artifacts slot into this replay without changing the judge-facing story: proposed fix, verification plan, postmortem, and skill.",
       status: "next" as const
     }
   ];
 }
 
 export async function listReplayIncidents(): Promise<NormalizedIncident[]> {
-  const entries = await fs.readdir(artifactsDir, { withFileTypes: true });
-  const incidentIds = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
-  const incidents = await Promise.all(
-    incidentIds.map(async (incidentId) => readJsonFile<NormalizedIncident>(incidentPathFromId(incidentId)))
-  );
-
-  return incidents.filter((incident): incident is NormalizedIncident => Boolean(incident));
+  return loadAllIncidents();
 }
 
 export async function loadReplayIncidentBundle(incidentId: string): Promise<ReplayBundle> {
-  const incident = await readJsonFile<NormalizedIncident>(incidentPathFromId(incidentId));
-  if (!incident) {
-    throw new Error(`Unknown incident: ${incidentId}`);
-  }
+  const incident = await loadIncidentById(incidentId);
 
-  const repro = await readJsonFile<ReplayReproPhaseOutput>(
+  const repro = await readOptionalJsonFile<ReplayReproPhaseOutput>(
     path.join(artifactsDir, incidentId, "phase.repro.json")
   );
-  const diagnosis = await readJsonFile<DiagnosisArenaOutput>(
+  const diagnosis = await readOptionalJsonFile<DiagnosisArenaOutput>(
     path.join(artifactsDir, incidentId, "phase.diagnosis-arena.json")
   );
-  const dashboardReplay = await readJsonFile<DashboardReplayArtifact>(
+  const dashboardReplay = await readOptionalJsonFile<DashboardReplayArtifact>(
     path.join(artifactsDir, incidentId, "dashboard-replay.json")
   );
 
@@ -535,7 +569,7 @@ export async function loadReplayIncidentBundle(incidentId: string): Promise<Repl
       ? {
           beforeLabel: "Before: the app breaks in a way a judge can feel immediately",
           beforeEvidence: dashboardReplay.before_after.before,
-          afterLabel: "After: the chosen fix and proof stabilize the flow",
+          afterLabel: "Next: the verification plan after applying the chosen patch",
           afterEvidence: dashboardReplay.before_after.after
         }
       : buildBeforeAfter(incident, repro),
@@ -555,12 +589,21 @@ export async function loadReplayIncidentBundle(incidentId: string): Promise<Repl
 }
 
 export function formatTimestamp(value: string): string {
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "Unknown time";
+  }
+
   return new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeStyle: "short"
-  }).format(new Date(value));
+  }).format(parsed);
 }
 
 export function formatPercent(value: number): string {
   return `${Math.round(value * 100)}%`;
 }
+
+export const isReplayDataNotFoundError = (error: unknown): error is ReplayDataError =>
+  error instanceof ReplayDataError && error.code === "incident_not_found";

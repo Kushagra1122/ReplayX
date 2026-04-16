@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import {
   formatPercent,
   formatTimestamp,
+  isReplayDataNotFoundError,
   loadReplayIncidentBundle,
   type ReplayWorkerCard
 } from "../../../lib/replay-data";
@@ -70,10 +71,16 @@ export default async function IncidentReplayPage({
   params: Promise<{ incidentId: string }>;
 }) {
   const { incidentId } = await params;
-  const bundle = await loadReplayIncidentBundle(incidentId).catch(() => null);
+  let bundle;
 
-  if (!bundle) {
-    notFound();
+  try {
+    bundle = await loadReplayIncidentBundle(incidentId);
+  } catch (error) {
+    if (isReplayDataNotFoundError(error)) {
+      notFound();
+    }
+
+    throw error;
   }
 
   const beforeAfter = bundle.beforeAfter;
@@ -170,7 +177,7 @@ export default async function IncidentReplayPage({
         </article>
 
         <article className="card">
-          <span className="section-kicker">Fix result</span>
+          <span className="section-kicker">Fix proposal</span>
           <h2>{bundle.fixCard.title}</h2>
           <p>{bundle.fixCard.summary}</p>
           <ul className="bullet-list">
@@ -183,7 +190,7 @@ export default async function IncidentReplayPage({
 
       <section className="three-up-grid">
         <article className="card">
-          <span className="section-kicker">Proof / regression</span>
+          <span className="section-kicker">Verification plan</span>
           <h2>{bundle.proofCard.title}</h2>
           <p>{bundle.proofCard.summary}</p>
           <ul className="bullet-list">

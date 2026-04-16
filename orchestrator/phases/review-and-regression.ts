@@ -58,12 +58,14 @@ export const runReviewAndRegressionPhase = (
   fixResult: ReplayXFixArenaPhaseOutput
 ): ReplayXReviewAndRegressionPhaseOutput => {
   const findings = buildFindings(incident, fixResult);
-  const reviewVerdict = findings.some((finding) => finding.severity === "critical") ? "fail" : "pass";
-  const regressionCommand = incident.commands.healthy.command;
+  const reviewVerdict = findings.some((finding) => finding.severity === "critical")
+    ? "blocked"
+    : "planned";
+  const regressionCommand = `${incident.commands.failing.command} && ${incident.commands.healthy.command}`;
   const regressionSummary =
-    reviewVerdict === "pass"
-      ? `Golden incident proof should show ${incident.commands.failing.label} fixed while ${incident.commands.healthy.label} stays green.`
-      : "No review-approved fix exists, so regression proof remains blocked.";
+    reviewVerdict === "planned"
+      ? `Planned verification should show ${incident.commands.failing.label} succeeds after applying the chosen patch while ${incident.commands.healthy.label} stays green.`
+      : "No reviewable fix proposal exists, so verification remains blocked.";
 
   return {
     schemaVersion: 1,
@@ -72,21 +74,21 @@ export const runReviewAndRegressionPhase = (
     review_verdict: reviewVerdict,
     findings,
     residual_risk:
-      reviewVerdict === "pass"
-        ? "The fix is credible for the golden demo path, but live Codex patch generation is still secondary to replay reliability."
-        : "A critical issue blocked the review verdict, so the demo must not present the fix as accepted.",
+      reviewVerdict === "planned"
+        ? "ReplayX has a reviewable fix proposal, but it does not yet execute and verify a real patch in the repository."
+        : "A critical issue blocked the review verdict, so the demo must not present the fix proposal as accepted.",
     regression_proof: {
       test_type: "script",
       target_files: fixResult.winner_changed_files,
       why_this_test:
-        "The demo relies on proving that the seeded failure disappears while the healthy control still passes.",
+        "The demo relies on a future execution step proving that the seeded failure disappears while the healthy control still passes.",
       verification_command: regressionCommand,
       demo_summary: regressionSummary
     },
     demo_summary:
-      reviewVerdict === "pass"
-        ? "Review passes and the golden-path proof is ready for the dashboard."
-        : "Review failed; the dashboard must show the fix as unapproved."
+      reviewVerdict === "planned"
+        ? "ReplayX produced a reviewed verification plan, but the fix is still a proposal until a real patch loop runs."
+        : "Review is blocked; the dashboard must show the fix as unapproved."
   };
 };
 
