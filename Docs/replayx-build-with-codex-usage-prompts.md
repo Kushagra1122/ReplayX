@@ -207,6 +207,19 @@ Keep it short and practical.
 Put it in the most sensible Markdown file for operators.
 ```
 
+### Hackathon Pre-Seeding Checklist
+
+- Environment setup
+  Confirm `pnpm install` has been run, Node meets the repo requirement, and the team can start both the ReplayX repo and the demo app from a clean shell.
+- Seeded incidents
+  Open the three incident fixtures in `incidents/` and confirm the incident ids, failing commands, and suspected files still match the current demo app paths.
+- Demo app verification
+  Start the app with `pnpm demo-app`, hit `/health`, and rerun the three repro commands so each seeded failure still reproduces and each healthy control still passes.
+- End-to-end dry run
+  Run one full narrated practice incident from intake through bug repro, expected diagnosis target, intended fix area, and final artifact/story so the operator flow is stable.
+- Fallback dashboard recording
+  Capture one clean fallback run before demo day: terminal output, failing and healthy route results, and any dashboard-ready screenshots or saved JSON/event artifacts needed if live execution is flaky.
+
 ## Phase 4 Prompt: Build Repro Phase
 
 ```text

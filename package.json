@@ -11,6 +11,10 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx orchestrator/main.ts",
+    "demo-app": "tsx demo_app/server.ts",
+    "demo-app:checkout-race": "tsx demo_app/scripts/repro-checkout-race.ts",
+    "demo-app:auth-refresh": "tsx demo_app/scripts/repro-auth-refresh.ts",
+    "demo-app:null-shape": "tsx demo_app/scripts/repro-null-shape.ts",
     "start": "node dist/orchestrator/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
