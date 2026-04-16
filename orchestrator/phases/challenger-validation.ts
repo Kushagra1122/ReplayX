@@ -162,16 +162,10 @@ const scoreClassSupport = (
 
 const scoreSpecificity = (
   candidate: ReplayXDiagnosisRankedCandidate,
-  incident: NormalizedIncident,
-  diagnosisResult: ReplayXDiagnosisArenaPhaseOutput
+  incident: NormalizedIncident
 ): number => {
   const profile = classProfiles[incident.incidentClass];
-  const text = [
-    candidate.diagnosis,
-    diagnosisResult.repro_summary.failure_surface,
-    incident.summary.symptom
-  ].join("\n");
-  const matches = countKeywordMatches(text, profile.keywords);
+  const matches = countKeywordMatches(candidate.diagnosis, profile.keywords);
 
   return roundScore(Math.min(1, matches / 3));
 };
@@ -187,7 +181,7 @@ const scoreCandidateSupport = (
   const statusScore = candidate.status === "completed" ? 1 : candidate.status === "weak_signal" ? 0.25 : 0;
   const confidenceScore = Math.max(0, Math.min(1, candidate.confidence));
   const classSupport = scoreClassSupport(candidate, incident.incidentClass);
-  const specificityScore = scoreSpecificity(candidate, incident, diagnosisResult);
+  const specificityScore = scoreSpecificity(candidate, incident);
   const fileOverlapScore = scoreFileOverlap(candidate, incident, diagnosisResult);
   const commandScore = commandSupportScore(candidate);
 
@@ -209,7 +203,7 @@ const buildCandidateChecks = (
 ): ReplayXChallengerCandidateCheck[] => {
   const profile = classProfiles[incident.incidentClass];
   const classSupport = scoreClassSupport(candidate, incident.incidentClass);
-  const specificityScore = scoreSpecificity(candidate, incident, diagnosisResult);
+  const specificityScore = scoreSpecificity(candidate, incident);
   const fileOverlapScore = scoreFileOverlap(candidate, incident, diagnosisResult);
   const evidenceKeywordCount = countKeywordMatches(evidenceText, profile.keywords);
 
@@ -275,7 +269,8 @@ const findStrongerPreferredCandidate = (
     return null;
   }
 
-  return scoreCandidateSupport(preferred, incident, diagnosisResult) > scoreCandidateSupport(candidate, incident, diagnosisResult)
+  return scoreCandidateSupport(preferred, incident, diagnosisResult) >
+    scoreCandidateSupport(candidate, incident, diagnosisResult)
     ? preferred
     : null;
 };
