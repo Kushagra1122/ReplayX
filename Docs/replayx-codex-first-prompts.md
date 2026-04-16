@@ -446,6 +446,9 @@ Rules:
 ````md
 {{shared_incident_packet}}
 
+## Prompt version
+2026-04-16.v1
+
 ## Your specialty
 {{specialty_name}}
 
@@ -456,7 +459,7 @@ Determine whether this incident is best explained by your specialty.
 1. Inspect the code paths most relevant to your specialty.
 2. Run the narrowest checks that can confirm or falsify your theory.
 3. Identify candidate files and the likely defect mechanism.
-4. Explain why a nearby alternative failure mode is less likely.
+4. Explain what would falsify your theory.
 5. Prefer a disproof if your specialty does not hold.
 6. Keep the diagnosis sentence concrete enough to guide a later fix worker.
 
@@ -470,14 +473,13 @@ Determine whether this incident is best explained by your specialty.
   "commands_run": ["commands"],
   "candidate_files": ["files"],
   "falsification_note": "what would disprove this",
-  "why_not_neighboring_failure_mode": "short explanation",
   "status": "completed | weak_signal | blocked"
 }
 ````
 
 ## Recommended Diagnosis Workers
 
-Use these worker variants.
+Use these worker variants for the current hackathon build. The code implementation currently fans out across exactly these six workers.
 
 ### 03A: Concurrency and Race Worker
 
@@ -513,59 +515,37 @@ Extra instructions:
 - Look for empty query results, unchecked properties, missing joins, stale schema assumptions, and invalid API payload expectations.
 ```
 
-### 03D: Deploy and Config Worker
+### 03D: Recent Change Regression Worker
 
 ```md
 Use the base diagnosis prompt with:
-- worker_id: diagnosis_config
-- specialty_name: deploy regression, config drift, environment mismatch, and recent diff risk
+- worker_id: diagnosis_recent_change
+- specialty_name: recent diff regression, changed code path behavior, and rollout-introduced bugs
 
 Extra instructions:
-- Focus on env vars, feature flags, startup config, dependency changes, and recent commits touching the affected path.
+- Focus on recent commits, removed normalization, newly unified code paths, and regressions introduced by the latest change set touching the incident path.
 ```
 
-### 03E: Dependency and Upstream Worker
+### 03E: Persistence and Transaction Worker
 
 ```md
 Use the base diagnosis prompt with:
-- worker_id: diagnosis_upstream
-- specialty_name: upstream service failure, dependency regression, external I/O, and timeout behavior
+- worker_id: diagnosis_database
+- specialty_name: query semantics, transaction bugs, locking, and persistence correctness
 
 Extra instructions:
-- Check outbound calls, SDK changes, retry logic, timeout settings, and changed dependency semantics.
+- Inspect read/write sequencing, transaction boundaries, uniqueness assumptions, stale snapshots, and any persistence semantics implied by the failing flow.
 ```
 
-### 03F: Database Semantics Worker
+### 03F: State Handoff Worker
 
 ```md
 Use the base diagnosis prompt with:
-- worker_id: diagnosis_db
-- specialty_name: query semantics, transaction bugs, locking, migrations, and persistence correctness
+- worker_id: diagnosis_state_handoff
+- specialty_name: queue handoff, cache semantics, stale state reuse, and eventual consistency gaps
 
 Extra instructions:
-- Inspect database reads and writes, transaction boundaries, query assumptions, uniqueness expectations, and migration compatibility.
-```
-
-### 03G: Cache and Queue Worker
-
-```md
-Use the base diagnosis prompt with:
-- worker_id: diagnosis_cache_queue
-- specialty_name: cache invalidation, queue behavior, retries, duplicate jobs, and eventual consistency
-
-Extra instructions:
-- Look for stale reads, missed invalidation, repeated job execution, ordering issues, and poison-message patterns.
-```
-
-### 03H: Resource and Performance Worker
-
-```md
-Use the base diagnosis prompt with:
-- worker_id: diagnosis_resource
-- specialty_name: resource exhaustion, latency regression, load sensitivity, and performance collapse
-
-Extra instructions:
-- Focus on memory, CPU, connection pool limits, thread starvation, high-cardinality queries, and latency spikes under load.
+- Look for stale reads, delayed workers, repeated job execution, reused session state, and handoff boundaries where state is copied and later committed.
 ```
 
 ## Prompt 04: Challenger Validation

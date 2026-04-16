@@ -13,6 +13,21 @@ export type ReplayXPhaseId = (typeof replayXPhaseIds)[number];
 
 export type ReplayXPhaseStatus = "pending" | "blocked" | "ready";
 
+export const replayXDiagnosisWorkerIds = [
+  "diagnosis_concurrency",
+  "diagnosis_auth",
+  "diagnosis_data_shape",
+  "diagnosis_recent_change",
+  "diagnosis_database",
+  "diagnosis_state_handoff"
+] as const;
+
+export type ReplayXDiagnosisWorkerId = (typeof replayXDiagnosisWorkerIds)[number];
+
+export const replayXDiagnosisWorkerStatuses = ["completed", "weak_signal", "blocked"] as const;
+
+export type ReplayXDiagnosisWorkerStatus = (typeof replayXDiagnosisWorkerStatuses)[number];
+
 export const replayXIncidentClasses = [
   "checkout-race-condition",
   "auth-token-session-failure",
@@ -175,6 +190,8 @@ export interface ReplayXRuntimeConfig {
   maxParallelWorkers: number;
   codexReproWorkerEnabled: boolean;
   codexReproWorkerTimeoutMs: number;
+  codexDiagnosisWorkersEnabled: boolean;
+  codexDiagnosisWorkerTimeoutMs: number;
 }
 
 export interface ReplayXPhaseDefinition {
@@ -187,6 +204,98 @@ export interface ReplayXPhaseDefinition {
   dependsOn: ReplayXPhaseId[];
   status: ReplayXPhaseStatus;
   implementationNotes?: string;
+}
+
+export interface ReplayXDiagnosisWorkerDefinition {
+  id: ReplayXDiagnosisWorkerId;
+  docsPromptId: string;
+  docsSectionTitle: string;
+  specialtyName: string;
+  extraInstructions: string;
+  focusKeywords: string[];
+  incidentClassAffinity: Partial<Record<ReplayXIncidentClass, number>>;
+  workerOrder: number;
+}
+
+export interface ReplayXDiagnosisWorkerOutput {
+  worker: ReplayXDiagnosisWorkerId;
+  specialty: string;
+  diagnosis: string;
+  confidence: number;
+  observations: string[];
+  commands_run: string[];
+  candidate_files: string[];
+  falsification_note: string;
+  status: ReplayXDiagnosisWorkerStatus;
+}
+
+export interface ReplayXDiagnosisWorkerTraceSummary {
+  item_types: string[];
+  commands: Array<{
+    command: string;
+    status: string;
+    exit_code: number | null;
+  }>;
+  reasoning: string[];
+}
+
+export interface ReplayXDiagnosisWorkerRunRecord {
+  worker_id: ReplayXDiagnosisWorkerId;
+  docs_prompt_id: string;
+  prompt_version: string;
+  specialty: string;
+  mode: "codex-sdk" | "local-heuristic";
+  thread_id: string | null;
+  output: ReplayXDiagnosisWorkerOutput;
+  raw_response: string | null;
+  trace_summary: ReplayXDiagnosisWorkerTraceSummary;
+  error: string | null;
+}
+
+export interface ReplayXDiagnosisRankingBreakdown {
+  status_score: number;
+  confidence_score: number;
+  class_affinity_score: number;
+  file_overlap_score: number;
+  observation_score: number;
+  command_score: number;
+  total: number;
+}
+
+export interface ReplayXDiagnosisRankedCandidate {
+  rank: number;
+  worker_id: ReplayXDiagnosisWorkerId;
+  specialty: string;
+  diagnosis: string;
+  confidence: number;
+  status: ReplayXDiagnosisWorkerStatus;
+  candidate_files: string[];
+  score: number;
+  score_breakdown: ReplayXDiagnosisRankingBreakdown;
+}
+
+export interface ReplayXDiagnosisArenaPhaseOutput {
+  schemaVersion: 1;
+  phase: "diagnosis-arena";
+  incidentId: string;
+  prompt_version: string;
+  worker_count: number;
+  codex_worker_count: number;
+  fallback_worker_count: number;
+  repro_summary: {
+    repro_confirmed: boolean;
+    verification_status: ReplayXReproPhaseOutput["verification_status"];
+    failure_surface: string;
+    candidate_files: string[];
+    confidence: number;
+  };
+  worker_results: ReplayXDiagnosisWorkerRunRecord[];
+  ranked_shortlist: ReplayXDiagnosisRankedCandidate[];
+  challenger_ready: {
+    winning_worker: ReplayXDiagnosisWorkerId | null;
+    shortlisted_workers: ReplayXDiagnosisWorkerId[];
+    candidate_count: number;
+  };
 }
 
 export interface ReplayXRunPlan {

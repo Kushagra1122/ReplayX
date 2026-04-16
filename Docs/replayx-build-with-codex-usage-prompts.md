@@ -59,12 +59,13 @@ The repository is already through the early setup phases:
 
 The next important transition is this:
 
-- actual Codex SDK integration starts when the repro, diagnosis, challenger, and fix phases are implemented
+- Codex SDK integration is now present in the repro and diagnosis phases
+- challenger and fix arena remain the next major worker phases to implement
 
 So if you are checking whether ReplayX is "already integrated with Codex," the precise answer is:
 
 - architecturally yes
-- in code, the real Codex worker integration begins in the next phases
+- in code, ReplayX already runs Codex-backed repro and diagnosis workers, with challenger and fix still pending
 
 ## Prompt Quality Rules For Build Prompts
 
