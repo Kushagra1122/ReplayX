@@ -4,34 +4,47 @@
 
 ```mermaid
 flowchart TD
-    A["Slack #bugs · CLI"]
+    A["User Bug Report"]
 
-    A -->|incident report| B["Intake\nnormalize title · error · logs · repo"]
-    B -->|check skills library| C{"Skill Match\nseen this before?"}
-    C -->|known pattern — fast path| H
-    C -->|new incident| D["Repro\nrun failing command against demo app"]
-    D -->|confirmed bug + context| E["Diagnosis Arena\n6 Codex workers in parallel\nconcurrency · auth · data shape · recent change · db · state handoff"]
-    E -->|top theories| F["Challenger\ntry to falsify the leading diagnosis"]
-    F -->|validated root cause| G["Fix Arena\nminimal · safe · durable — ranked by blast radius"]
-    G -->|fix proposal| H["Review\napprove or veto"]
-    H -->|approved| I["Postmortem + Skill Write\npostmortem.json · fix_recommendation.json · skill.md"]
-    I -->|skill.md reused on next similar incident| C
+    A -->|message in #bugs| B["Slack Bot"]
+    B -->|trigger| C["Orchestrator"]
+    B -->|open live run| D["Dashboard"]
 
-    I -->|artifacts written to disk| J["Dashboard Server\nNext.js + WebSocket"]
-    J -->|live phase updates| K["Live Run View"]
-    J -->|saved artifacts| L["Replay View\nany past run, fully re-inspectable"]
+    C -->|phase events via WebSocket| D
+
+    C -->|1 normalize| E["Incident Intake"]
+    E -->|2 check past incidents| F{"Skill Match"}
+    F -->|known pattern| K
+    F -->|new incident| G["Repro\nconfirm bug against demo app"]
+    G -->|3 investigate| H["Diagnosis Arena"]
+
+    H -->|Codex worker| H1["concurrency"]
+    H -->|Codex worker| H2["auth"]
+    H -->|Codex worker| H3["data shape"]
+    H -->|Codex worker| H4["recent change"]
+    H -->|Codex worker| H5["db · state handoff"]
+
+    H1 & H2 & H3 & H4 & H5 -->|ranked theories| I["Challenger\nfalsify top diagnosis"]
+    I -->|validated root cause| J["Fix Arena\nminimal · safe · durable"]
+    J -->|fix proposal| K["Review\napprove or veto"]
+    K -->|approved| L["Postmortem + Skill Write"]
+
+    L -->|skill.md fed back| F
+    L -->|final artifacts| D
+    D -->|shows phases · diagnosis · fix · skill| A
 ```
 
 ## Walkthrough
 
-| # | Phase | What happens |
-|---|-------|-------------|
-| 1 | **Intake** | Normalizes the report — title, error, logs, repo, recent changes — into a clean bundle |
-| 2 | **Skill Match** | Checks if this pattern was seen before. Match → skip straight to Postmortem |
-| 3 | **Repro** | Runs the failing command against the demo app to confirm the bug before spending compute |
-| 4 | **Diagnosis Arena** | 6 Codex workers run in parallel, each owning a failure domain |
-| 5 | **Challenger** | A dedicated worker tries to falsify the top theory. Weak diagnoses get rejected here |
-| 6 | **Fix Arena** | Fix strategies ranked by blast radius: minimal patch → safe refactor → durable redesign |
-| 7 | **Review** | Final worker approves or vetoes the fix proposal |
-| 8 | **Postmortem + Skill** | Writes a postmortem and a `skill.md` that feeds back into Skill Match for future runs |
-| — | **Dashboard** | Every phase streams live over WebSocket. Any past run is replayable from saved artifacts |
+| # | What happens |
+|---|-------------|
+| 1 | User reports a bug in Slack. Bot triggers the Orchestrator **and** immediately opens a live run on the Dashboard |
+| 2 | Orchestrator streams every phase event to the Dashboard over WebSocket in real time |
+| 3 | **Intake** normalizes the report into a clean bundle — title, error, logs, repo, recent changes |
+| 4 | **Skill Match** checks if this pattern was seen before. Hit → skip straight to Review |
+| 5 | **Repro** runs the failing command against the demo app to confirm the bug is real |
+| 6 | **Diagnosis Arena** fans out to parallel Codex workers, each owning a failure domain |
+| 7 | **Challenger** tries to falsify the top theory — weak diagnoses are rejected here |
+| 8 | **Fix Arena** ranks strategies by blast radius: minimal patch → safe refactor → durable redesign |
+| 9 | **Review** approves or vetoes the proposal |
+| 10 | **Postmortem + Skill Write** saves `skill.md` back into Skill Match for future incidents — and pushes everything to the Dashboard |
