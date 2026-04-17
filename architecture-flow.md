@@ -4,78 +4,22 @@
 
 ```mermaid
 flowchart TD
-    IN1["Slack · #bugs"]
-    IN2["CLI · golden-run"]
+    A["Slack #bugs · CLI"]
 
-    subgraph ORCH["ReplayX Orchestrator"]
-        direction TB
-        P1["Intake\nnormalize the incident"]
-        P2{"Skill Match\nseen this before?"}
-        P3["Repro\nconfirm the bug is real"]
-        P4["Diagnosis Arena\n6 workers in parallel"]
-        P5["Challenger\nfalsify the top theory"]
-        P6["Fix Arena\nrank by blast radius"]
-        P7["Review\napprove or veto"]
-        P8["Postmortem + Skill Write"]
+    A -->|incident report| B["Intake\nnormalize title · error · logs · repo"]
+    B -->|check skills library| C{"Skill Match\nseen this before?"}
+    C -->|known pattern — fast path| H
+    C -->|new incident| D["Repro\nrun failing command against demo app"]
+    D -->|confirmed bug + context| E["Diagnosis Arena\n6 Codex workers in parallel\nconcurrency · auth · data shape · recent change · db · state handoff"]
+    E -->|top theories| F["Challenger\ntry to falsify the leading diagnosis"]
+    F -->|validated root cause| G["Fix Arena\nminimal · safe · durable — ranked by blast radius"]
+    G -->|fix proposal| H["Review\napprove or veto"]
+    H -->|approved| I["Postmortem + Skill Write\npostmortem.json · fix_recommendation.json · skill.md"]
+    I -->|skill.md reused on next similar incident| C
 
-        P1 --> P2
-        P2 -->|known pattern| P8
-        P2 -->|new incident| P3
-        P3 --> P4
-        P4 --> P5
-        P5 --> P6
-        P6 --> P7
-        P7 --> P8
-    end
-
-    subgraph WORKERS["Parallel Codex Workers"]
-        direction LR
-        W1["concurrency"]
-        W2["auth"]
-        W3["data shape"]
-        W4["recent change"]
-        W5["database"]
-        W6["state handoff"]
-    end
-
-    subgraph CTX["Incident Context"]
-        direction TB
-        C1["error · logs · stack trace"]
-        C2["repo · recent commits"]
-        C3["demo app repro scripts"]
-    end
-
-    subgraph ART["Artifact Store"]
-        direction TB
-        A1["diagnosis.json"]
-        A2["fix_recommendation.json"]
-        A3["postmortem.json"]
-        A4["skill.md"]
-    end
-
-    subgraph DASH["Live Dashboard · Next.js + WebSocket"]
-        direction LR
-        D1["Live Run View"]
-        D2["Replay View"]
-    end
-
-    IN1 --> P1
-    IN2 --> P1
-
-    P3 --> CTX
-
-    P4 -.->|fan out| WORKERS
-    WORKERS -.->|ranked diagnoses| P5
-
-    P4 --> A1
-    P6 --> A2
-    P8 --> A3
-    P8 --> A4
-
-    A4 -->|reused on next similar incident| P2
-
-    ART -->|file watch · WebSocket push| D1
-    ART --> D2
+    I -->|artifacts written to disk| J["Dashboard Server\nNext.js + WebSocket"]
+    J -->|live phase updates| K["Live Run View"]
+    J -->|saved artifacts| L["Replay View\nany past run, fully re-inspectable"]
 ```
 
 ## Walkthrough
