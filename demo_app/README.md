@@ -15,6 +15,10 @@ ReplayX uses this intentionally buggy demo app to prove the diagnosis and fix lo
 pnpm demo-app
 ```
 
+Default base URL:
+
+- `http://127.0.0.1:4311`
+
 The app serves:
 
 - `GET /health`

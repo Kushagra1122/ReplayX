@@ -31,6 +31,12 @@ pnpm --dir dashboard dev -- --port 3001
 npm start --prefix slack
 ```
 
+Expected local ports:
+
+- demo app: `http://127.0.0.1:4311`
+- dashboard: `http://localhost:3001`
+- Slack intake: `http://localhost:3000`
+
 Manual live-run creation check:
 
 ```bash

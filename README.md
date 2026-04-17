@@ -143,6 +143,10 @@ npm --prefix slack install
 pnpm demo-app
 ```
 
+Expected demo app URL:
+
+- `http://127.0.0.1:4311/`
+
 ### 3. Start the dashboard
 
 ```bash
@@ -154,6 +158,10 @@ pnpm --dir dashboard dev -- --port 3001
 ```bash
 npm --prefix slack start
 ```
+
+Expected Slack service URL:
+
+- `http://localhost:3000/`
 
 ### 5. Open the dashboard
 

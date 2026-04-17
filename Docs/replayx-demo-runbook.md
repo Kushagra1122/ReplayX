@@ -68,6 +68,7 @@ Run the broken application that will be targeted by the incident.
 ```bash
 pnpm demo-app
 ```
+The demo app should log `http://127.0.0.1:4311` and that is expected.
 
 ### Terminal 2: Start the ReplayX Dashboard
 This is the main, judge-facing interactive surface. It now runs behind the custom dashboard server so live runs can update over WebSockets.
@@ -101,7 +102,7 @@ Wait for this to complete before relying on the replay route.
 Use this sequence in the meeting or screen share:
 
 1. **Bug Encounter**
-   - Open the **Demo App** from Terminal 2.
+   - Open the **Demo App** from Terminal 1 at `http://127.0.0.1:4311`.
    - Show the failing state for the checkout race condition.
    - Keep this short: the point is to make the incident feel real, not to stay in the broken app.
    
@@ -150,11 +151,14 @@ Avoid saying things like:
 Run this checklist before the recruiter call:
 
 1. The demo app starts and the seeded bug is still reproducible.
+   - Expected base URL: `http://127.0.0.1:4311`
 2. The dashboard starts with:
    ```bash
    pnpm --dir dashboard dev -- --port 3001
    ```
+   - Expected base URL: `http://localhost:3001`
 3. Slack starts without auth or boot errors.
+   - Expected base URL: `http://localhost:3000`
 4. A Slack mention creates a run and returns a `/live/<runId>` handoff.
 5. The live dashboard page updates through multiple phases without reload.
 6. The reusable skill appears only at the end of the run.
