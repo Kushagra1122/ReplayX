@@ -61,7 +61,7 @@ function TimelineStep({
         <p className="timeline-title" style={{ color: status === 'now' ? 'var(--accent)' : 'var(--text)' }}>{title}</p>
         <p className="timeline-detail">{detail}</p>
       </div>
-      {status === 'now' && <span className="pill pill-warning" style={{ alignSelf: 'start', fontSize: '0.65rem' }}>ACTIVE</span>}
+      {status === 'now' && <span className="pill pill-warning" style={{ alignSelf: 'flex-start', fontSize: '0.65rem' }}>ACTIVE</span>}
     </li>
   );
 }

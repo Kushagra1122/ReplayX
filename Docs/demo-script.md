@@ -1,71 +1,30 @@
-# ReplayX Demo Script
+# ReplayX Demo Script Summary
 
-Golden incident:
+This file is the short-form summary of the current demo beats.
 
-- `incident-checkout-race-001`
+For the canonical spoken script, use:
 
-Golden replay target:
+- [replayx-2min-demo-script.md](./replayx-2min-demo-script.md)
 
-- `/replay/incident-checkout-race-001`
+For the operational runbook, use:
 
-## 2-Minute Flow
+- [replayx-demo-runbook.md](./replayx-demo-runbook.md)
 
-### 00:00–00:10
+## Current 2-Minute Beat Structure
 
-Screen:
-- title screen or dashboard hero
+1. Show the broken app.
+2. Report the bug in Slack.
+3. Open the live dashboard handoff.
+4. Show the orchestrator advancing phase by phase.
+5. Show the diagnosis winner and selected fix path.
+6. Land on proof, postmortem, and reusable skill.
 
-Narration:
-- Production incident response is slow and manual. ReplayX turns an incident bundle into a ranked diagnosis, fix path, proof, and reusable knowledge.
+## Current Product Framing
 
-### 00:10–00:25
+ReplayX turns incident response into a Codex-powered engineering workflow with:
 
-Screen:
-- broken demo app or failing signal
-
-Narration:
-- Here is the broken app state for the golden incident. The bug is concrete and user-visible.
-
-### 00:25–00:40
-
-Screen:
-- Slack intake
-
-Narration:
-- A bug report arrives in Slack. ReplayX acknowledges it and hands off into the incident replay flow.
-
-### 00:40–01:05
-
-Screen:
-- dashboard diagnosis worker fan-out
-
-Narration:
-- ReplayX fans out Codex specialists, compares competing explanations, and surfaces the strongest diagnosis.
-
-### 01:05–01:30
-
-Screen:
-- fix and proof cards
-
-Narration:
-- ReplayX selects the safest winning fix and shows the proof needed to trust it, not just a claim.
-
-### 01:30–01:50
-
-Screen:
-- before/after plus postmortem and skill cards
-
-Narration:
-- The bug is resolved in the golden path, and ReplayX emits a postmortem and a reusable skill for the next incident.
-
-### 01:50–02:00
-
-Screen:
-- final ReplayX product view
-
-Narration:
-- ReplayX is built on Codex as the debugging brain: bounded specialists, code-aware fixes, proof, and reusable incident memory.
-
-Closing line:
-
-- ReplayX: incident response built on Codex.
+- evidence-driven diagnosis
+- bounded specialist workers
+- reviewed fix strategy
+- verification proof
+- reusable incident memory

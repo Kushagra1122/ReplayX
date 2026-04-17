@@ -4,6 +4,11 @@ This file is the canonical workflow summary for ReplayX.
 
 ReplayX runs a deterministic incident workflow with auditable artifacts at every phase. The orchestrator coordinates bounded workers, machine-readable outputs, and verification gates.
 
+ReplayX currently exposes that workflow in two ways:
+
+- **Live run**: Slack or the run API starts a live incident run, and the dashboard updates in real time.
+- **Replay**: precomputed artifacts are rendered as a stable fallback demo path.
+
 ## Workflow phases
 
 1. Incident intake
@@ -61,4 +66,8 @@ Every phase should preserve artifacts on disk so the run is inspectable and repl
 
 ## Current implementation note
 
-The current repository implements the replay-safe golden path end to end, including incident intake artifacting and fast-path skill matching. The later golden-path phases still emit deterministic fix proposals and verification plans rather than applying and validating real repository patches.
+The current repository implements the replay-safe golden path end to end, including incident intake artifacting and fast-path skill matching.
+
+Live runs now stream dashboard updates over WebSockets, with SSE fallback retained for resilience.
+
+The later fix/review phases still emit deterministic fix proposals and verification plans rather than applying and validating real repository patches.

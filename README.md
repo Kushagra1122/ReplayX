@@ -2,8 +2,6 @@
 
 ReplayX is a Codex-first incident response system built for the Codex hackathon.
 
-Demo video: https://youtu.be/ko7e5ZREehE
-
 It turns a production-style incident into:
 
 - a ranked diagnosis
@@ -12,17 +10,13 @@ It turns a production-style incident into:
 - a postmortem
 - a reusable incident skill
 
-The core idea is simple: incident response should feel less like panic and more like playback.
+The core product idea is simple: incident response should feel less like panic and more like playback.
 
-## Submission Links
+## What ReplayX Is
 
-- Demo video: https://youtu.be/ko7e5ZREehE
+ReplayX is not a generic chatbot wrapped around logs.
 
-## What Makes ReplayX Different
-
-Most incident tooling helps teams route alerts, view logs, or chat around a problem. ReplayX is aimed at the harder step after that: converting messy evidence into an engineering-quality debugging flow.
-
-ReplayX uses Codex as the reasoning and coding engine behind bounded specialists that:
+It is a code-aware incident workflow where Codex-powered specialists:
 
 - inspect incident evidence
 - narrow the failure surface
@@ -31,22 +25,25 @@ ReplayX uses Codex as the reasoning and coding engine behind bounded specialists
 - rank fix strategies
 - emit reusable incident knowledge
 
-This is not a generic chatbot wrapped in an ops UI. It is a code-aware incident workflow designed around debugging, verification, and reuse.
+The main product surface is the dashboard. Slack is the intake trigger. The seeded `demo_app/` exists to make the failure concrete and demoable.
 
-## Demo Flow
+## Current Product Modes
 
-The golden demo path is:
+ReplayX supports two product modes:
 
-1. A real bug appears in the seeded `demo_app/`.
-2. A user reports it in Slack.
-3. ReplayX starts an incident run.
-4. The dashboard shows diagnosis worker fan-out and the winning root cause.
-5. ReplayX presents the safest fix path and the proof required to trust it.
-6. The run ends with a postmortem and a reusable incident skill.
+1. **Live run**
+   - a user reports a bug in Slack
+   - ReplayX starts a live incident run
+   - the dashboard updates live over WebSockets as the orchestrator advances
+   - the run ends with a postmortem and reusable skill
 
-For hackathon judging, the main product surface is the dashboard, not the broken app or Slack bot in isolation.
+2. **Replay**
+   - precomputed artifacts drive a stable fallback path at `/replay/incident-checkout-race-001`
+   - use this when you want a safety net or a no-risk demo
 
-## Why Codex Is Essential
+For recruiter and judge demos, the recommended primary path is the **live run**.
+
+## Why Codex Matters
 
 ReplayX only works if the system behind it can do software-engineering work, not just summarize text.
 
@@ -74,6 +71,8 @@ This repository contains a replay-safe, judge-friendly end-to-end implementation
 Important implementation boundary:
 
 - ReplayX already runs the golden path end to end
+- Slack can trigger a live run and hand off directly into the dashboard
+- the live dashboard now uses WebSockets for real-time orchestration updates, with SSE fallback retained for resilience
 - the flow is artifact-driven and replay-safe for demo reliability
 - later phases currently emit reviewed fix proposals and verification plans rather than automatically patching and validating a target repository
 
@@ -118,6 +117,16 @@ More detail:
 - [Docs/replayx-codex-first-architecture.md](Docs/replayx-codex-first-architecture.md)
 - [Docs/replayx-codex-first-prompts.md](Docs/replayx-codex-first-prompts.md)
 
+## Documentation Guide
+
+Use these files as the canonical entry points:
+
+- Product and repo overview: [README.md](README.md)
+- Live demo operations: [Docs/replayx-demo-runbook.md](Docs/replayx-demo-runbook.md)
+- 2-minute pitch script: [Docs/replayx-2min-demo-script.md](Docs/replayx-2min-demo-script.md)
+- Docs directory map: [Docs/README.md](Docs/README.md)
+- Submission framing: [Docs/replayx-hackathon-submission.md](Docs/replayx-hackathon-submission.md)
+
 ## Run The Demo
 
 ### 1. Install dependencies
@@ -128,36 +137,42 @@ pnpm --dir dashboard install
 npm --prefix slack install
 ```
 
-### 2. Generate golden run artifacts
-
-```bash
-pnpm golden-run incidents/checkout-race-condition.json
-```
-
-### 3. Start the broken app
+### 2. Start the broken app
 
 ```bash
 pnpm demo-app
 ```
 
-### 4. Start the dashboard
+### 3. Start the dashboard
 
 ```bash
 pnpm --dir dashboard dev -- --port 3001
 ```
 
-### 5. Optional: start Slack intake
+### 4. Start Slack intake
 
 ```bash
 npm --prefix slack start
 ```
 
-### 6. Open the dashboard
+### 5. Open the dashboard
 
 - overview: `http://localhost:3001/`
+- live run: created from Slack or via `POST /api/replayx/runs`, then opened at `/live/<runId>`
+
+### Optional backup: precompute replay artifacts
+
+If you want the replay fallback route available:
+
+```bash
+pnpm golden-run incidents/checkout-race-condition.json
+```
+
+Then open:
+
 - golden replay: `http://localhost:3001/replay/incident-checkout-race-001`
 
-For the live demo runbook, see [Docs/hackathon-demo-and-verification.md](Docs/hackathon-demo-and-verification.md).
+For the full recruiter/judge live flow, see [Docs/replayx-demo-runbook.md](Docs/replayx-demo-runbook.md).
 
 ## Project Structure
 
@@ -190,7 +205,9 @@ The project is not trying to show "AI can read logs." It is showing a credible n
 
 - The current golden path optimizes for replay reliability over full live patch execution.
 - Slack is the intake trigger, not the main product surface.
-- The dashboard is currently polling-based for live runs rather than websocket-based.
+- Live runs now use WebSockets for dashboard updates, with SSE and polling retained as fallback paths.
+- The orchestrator still publishes progress by updating persisted run-state files, and the dashboard server pushes those updates over the socket connection.
+- The fix path is still a reviewed proposal plus proof plan, not an automatic repo patch-and-validate loop.
 
 These are acceptable tradeoffs for the current hackathon scope and demo constraints.
 

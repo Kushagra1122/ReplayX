@@ -19,8 +19,8 @@ export default async function LiveRunPage({
           <span className="eyebrow">Slack-triggered live run</span>
           <h1>ReplayX is investigating</h1>
           <p className="lead">
-            Slack handed this incident to the ReplayX orchestrator. This page updates as each phase
-            completes.
+            Slack handed this incident to the ReplayX orchestrator. This page updates live over a socket
+            connection as each investigation phase completes.
           </p>
         </div>
       </header>

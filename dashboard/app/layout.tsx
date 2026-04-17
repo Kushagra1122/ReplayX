@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
 const displayFont = Fraunces({
@@ -8,10 +8,17 @@ const displayFont = Fraunces({
   variable: "--font-display"
 });
 
-const bodyFont = Inter({
+const bodyFont = IBM_Plex_Sans({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-body"
+});
+
+const monoFont = IBM_Plex_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500"],
+  variable: "--font-mono"
 });
 
 export const metadata: Metadata = {
@@ -21,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${displayFont.variable} ${bodyFont.variable}`}>
+    <html lang="en" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
       <body style={{ backgroundColor: "var(--bg)" }}>{children}</body>
     </html>
   );
