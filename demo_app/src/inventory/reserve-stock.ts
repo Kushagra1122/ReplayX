@@ -19,6 +19,11 @@ export const reserveStock = async (sku: string, quantity: number, requestId: str
   await delay(25);
 
   const record = getInventoryRecord(sku);
+
+  if (record.available < quantity) {
+    throw new Error(`OutOfStock: ${sku}`);
+  }
+
   record.available -= quantity;
   record.snapshotVersion += 1;
 
@@ -29,8 +34,8 @@ export const reserveStock = async (sku: string, quantity: number, requestId: str
   }
 
   return {
-    reservationToken: `res_${requestId}_${snapshot.snapshotVersion}`,
-    snapshotVersion: snapshot.snapshotVersion,
+    reservationToken: `res_${requestId}_${record.snapshotVersion}`,
+    snapshotVersion: record.snapshotVersion,
     availableAfter: record.available
   };
 };
