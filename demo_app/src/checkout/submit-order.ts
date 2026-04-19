@@ -14,5 +14,17 @@ export const runCheckoutRaceScenario = async (mode: "concurrent" | "serial"): Pr
     return [await processCheckoutWorker(requests[0])];
   }
 
-  return Promise.all(requests.map((request) => processCheckoutWorker(request)));
+  const settled = await Promise.allSettled(requests.map((request) => processCheckoutWorker(request)));
+
+  const hardFailure = settled.find(
+    (result) =>
+      result.status === "rejected" &&
+      !(result.reason instanceof Error && result.reason.message.startsWith("OutOfStock:"))
+  );
+
+  if (hardFailure && hardFailure.status === "rejected") {
+    throw hardFailure.reason;
+  }
+
+  return settled.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
 };
